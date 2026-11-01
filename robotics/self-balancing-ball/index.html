@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-Balancing Ball | Midhun</title>
+  <meta name="description" content="A ball balanced on a four-cylinder hydraulic platform, with three estimators, two controllers and repeatability data. Classical control only.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#demo">Try it</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Control &amp; Estimation</div>
+      <h1>Self-balancing <em>ball</em></h1>
+      <p class="lead">A round platform carried by four servo-valve hydraulic cylinders keeps a ball from rolling off. Classical control and estimation only: PID, LQR, Kalman filters and a complementary-filter AHRS. There is no AI/ML in the loop.</p>
+      <div class="meta">
+        <span class="tag">ROS 2 Jazzy</span><span class="tag">MuJoCo</span><span class="tag">Docker</span><span class="tag">PID</span><span class="tag">LQR</span><span class="tag">Kalman filter</span><span class="tag">Mahony AHRS</span>
+      </div>
+    </header>
+
+    <section class="block" id="showcase">
+      <div class="eyebrow">01 · Showcase</div>
+      <figure class="media-block">
+        <video controls muted playsinline preload="metadata" src="media/showcase.mp4"></video>
+        <figcaption>Showcase of the balancer in simulation: release, push, circle tracking and a diagonal push.</figcaption>
+      </figure>
+    </section>
+
+
+    <section class="block" id="demo">
+      <div class="eyebrow">02 · Try it</div>
+      <h2>Balance it <em>yourself</em></h2>
+      <p>The loop runs three steps hundreds of times a second. Play with it below: move the target, flick the ball, switch sensors, or turn the controller off and try balancing by hand.</p>
+      <div class="steps">
+        <div class="step"><span class="num">01 · Sense</span><h3>Measure the ball</h3><p>A touch panel, an overhead camera or an IMU inside the ball reports where it is, each with its own rate, noise and delay.</p></div>
+        <div class="step"><span class="num">02 · Estimate</span><h3>Filter the noise</h3><p>A Kalman filter turns noisy, delayed samples into a clean position and velocity estimate (the orange ring).</p></div>
+        <div class="step"><span class="num">03 · Tilt</span><h3>Drive four cylinders</h3><p>The controller picks a plate tilt (at most 8°) that rolls the ball toward the target, and maps it to four cylinder strokes.</p></div>
+      </div>
+
+      <div class="demo" id="bb-demo">
+        <div class="demo-bar">
+          <div class="seg" data-k="mode"><button type="button" data-v="direct" class="on">Touch panel</button><button type="button" data-v="camera">Camera</button><button type="button" data-v="imu">IMU in ball</button></div>
+          <div class="seg" data-k="ctrl"><button type="button" data-v="on" class="on">Controller on</button><button type="button" data-v="off">Off: tilt by hand</button></div>
+          <div class="seg" data-k="traj"><button type="button" data-v="hold" class="on">Hold</button><button type="button" data-v="circle">8 cm circle</button></div>
+          <button type="button" class="btn" data-act="push">Push ball</button>
+          <button type="button" class="btn" data-act="reset">Reset</button>
+        </div>
+        <div class="demo-body">
+          <div>
+            <p class="demo-label">Top view</p>
+            <canvas class="bb-top" aria-label="Top view of the plate, ball and target. Drag to interact."></canvas>
+            <p class="demo-hint"></p>
+          </div>
+          <div>
+            <p class="demo-label">Side view</p>
+            <canvas class="bb-side" aria-hidden="true"></canvas>
+            <div class="stats">
+              <div class="stat"><div class="k">Tracking error</div><div class="v" data-s="track">–</div><div class="s" data-s="trackrms"></div></div>
+              <div class="stat"><div class="k">Estimation error</div><div class="v" data-s="est">–</div><div class="s">estimate vs true ball</div></div>
+              <div class="stat"><div class="k">Plate tilt</div><div class="v" data-s="tilt">–</div><div class="s">limit 8°</div></div>
+              <div class="stat"><div class="k">Status</div><div class="v" data-s="status">–</div><div class="cyl" title="Cylinder strokes C1 to C4"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div></div>
+            </div>
+            <p class="demo-label">PID gains</p>
+            <div class="sliders">
+              <label>kp <input type="range" min="0" max="10" step="0.1" data-g="kp"><output></output></label>
+              <label>kd <input type="range" min="0" max="5" step="0.1" data-g="kd"><output></output></label>
+              <label>ki <input type="range" min="0" max="3" step="0.1" data-g="ki"><output></output></label>
+            </div>
+            <p style="margin:.5rem 0 0;"><button type="button" class="btn" data-act="gains">Default gains</button></p>
+          </div>
+        </div>
+        <div class="demo-plot">
+          <canvas class="bb-plot" aria-label="Tracking and estimation error over the last 10 seconds"></canvas>
+        </div>
+        <p class="demo-note">This is a simplified 2-D ball-on-plate model running in your browser, not the MuJoCo simulation. It uses the 8° tilt limit, the platform's measured tilt response (63% in about 37 ms) and each sensor's rate, noise and latency from the project. The PID gains are tuned for this simplified model, not taken from the project (see the controller design table below). The IMU drift and camera bias are illustrative. Try raising kp or kd to see the loop start to oscillate.</p>
+      </div>
+    </section>
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">03 · Architecture</div>
+      <h2>The ROS 2 <em>graph</em></h2>
+      <p>Pick a sensor model to see which path is live. The same controller and plant serve all three models; only the sensing and estimation change.</p>
+      <div class="arch" id="bb-arch">
+        <div class="arch-tabs" role="tablist" aria-label="Sensor model"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="estimators">
+      <div class="eyebrow">04 · Three estimators</div>
+      <h2>Estimating the <em>ball</em> three ways</h2>
+      <p>Each model was built on the previous one. Only the sensing and estimator change; the controllers stay the same.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead><tr><th>Model</th><th>Sensor</th><th>Estimator</th></tr></thead>
+          <tbody>
+            <tr><td>1. Direct</td><td>Touch panel under the rubber top, 100 Hz, 0.8 mm noise</td><td>Model-based Kalman filter</td></tr>
+            <tr><td>2. Single camera</td><td>Overhead 640×480 camera, 60 fps, 12 ms latency</td><td>HSV blob → pixel ray ∩ plate plane (plate pose from cylinder LVDTs) → delay-compensated Kalman filter</td></tr>
+            <tr><td>3. IMU in ball</td><td>Accelerometer, gyro and magnetometer, 200 Hz, biased and noisy</td><td>Mahony AHRS → rolling-without-slip odometry → Kalman filter</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid2" style="margin-top:1.5rem;">
+        <figure class="media-block"><img src="media/fig_rig.png" alt="Hardware rig"><figcaption>The platform rig.</figcaption></figure>
+        <figure class="media-block"><img src="media/fig_camera.png" alt="Camera estimator"><figcaption>Camera-based estimation.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="block" id="results">
+      <div class="eyebrow">05 · Main results</div>
+      <h2>24-second <em>scenario</em></h2>
+      <p>The scenario is a release, a push, two laps of an 8 cm circle, a set-point hold and a diagonal push. Cells show offline / ROS 2 graph. Offline runs are deterministic (seed 0); the ROS runs use <code>/clock</code> with real message passing.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead>
+            <tr><th>Model</th><th>Controller</th><th>Ball lost?</th><th>Circle RMS error [mm]</th><th>Final hold error [mm]</th><th>Estimation RMS [mm]</th><th>Peak cylinder force [N]</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1. Direct</td><td>LQR</td><td>no / no</td><td>2.6 / 3.0</td><td>1.4 / 1.3</td><td>0.9 / 1.7</td><td>200</td></tr>
+            <tr><td>1. Direct</td><td>PID</td><td>no / no</td><td>2.6 / 2.9</td><td>2.1 / 2.1</td><td>0.9 / 1.6</td><td>211</td></tr>
+            <tr><td>2. Single camera</td><td>LQR</td><td>no / no</td><td>2.6 / 3.4</td><td>2.1 / 1.3</td><td>2.4 / 3.2</td><td>202</td></tr>
+            <tr><td>2. Single camera</td><td>PID</td><td>no / no</td><td>3.1 / 3.9</td><td>2.8 / 2.0</td><td>2.4 / 3.1</td><td>173</td></tr>
+            <tr><td>3. IMU in ball</td><td>LQR</td><td>no / no</td><td>3.9 / 5.1</td><td>5.7 / 8.6</td><td>4.4 / 5.9</td><td>200</td></tr>
+            <tr><td>3. IMU in ball</td><td>PID</td><td>no / no</td><td>4.3 / 5.8</td><td>4.7 / 6.4</td><td>4.2 / 6.0</td><td>217</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:1rem;">The ball was never lost in any of the twelve runs. Estimation RMS includes the roughly 1.5 mm camera calibration bias and the IMU's dead-reckoning drift.</p>
+      <div class="grid2" style="margin-top:1.5rem;">
+        <figure class="media-block"><img src="media/direct_lqr_plots.png" alt="Direct estimator with LQR"><figcaption>Direct estimator, LQR: tracking and estimation.</figcaption></figure>
+        <figure class="media-block"><img src="media/camera_lqr_plots.png" alt="Camera estimator with LQR"><figcaption>Camera estimator, LQR.</figcaption></figure>
+        <figure class="media-block"><img src="media/imu_lqr_plots.png" alt="IMU estimator with LQR"><figcaption>IMU estimator, LQR.</figcaption></figure>
+      </div>
+      <div class="grid2" style="margin-top:1.5rem;">
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/direct_lqr.mp4"></video><figcaption>Direct estimator run.</figcaption></figure>
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/camera_lqr.mp4"></video><figcaption>Camera estimator run.</figcaption></figure>
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/imu_lqr.mp4"></video><figcaption>IMU estimator run.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="block" id="repeatability">
+      <div class="eyebrow">06 · Repeatability</div>
+      <h2>Across random <em>seeds</em></h2>
+      <p>Each configuration was re-run with different random seeds, varying sensor noise and initial conditions. Values are mean ± standard deviation, with the minimum and maximum in brackets. Camera runs use 3 seeds per controller; direct and IMU runs use 5.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead>
+            <tr><th>Estimator</th><th>Controller</th><th>Runs</th><th>Falls</th><th>Circle RMS [mm]</th><th>Final hold [mm]</th><th>Estimation RMS [mm]</th><th>Peak force [N]</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Direct</td><td>LQR</td><td>5</td><td>0</td><td>2.60 ± 0.05 (2.53–2.66)</td><td>1.31 ± 0.11 (1.15–1.41)</td><td>0.91 ± 0.02 (0.87–0.92)</td><td>209 ± 8</td></tr>
+            <tr><td>Direct</td><td>PID</td><td>5</td><td>0</td><td>2.63 ± 0.04 (2.58–2.66)</td><td>1.95 ± 0.13 (1.76–2.10)</td><td>0.90 ± 0.02 (0.86–0.92)</td><td>199 ± 12</td></tr>
+            <tr><td>Camera</td><td>LQR</td><td>3</td><td>0</td><td>3.42 ± 1.30 (2.62–4.93)</td><td>2.26 ± 1.68 (0.66–4.01)</td><td>3.18 ± 1.34 (2.36–4.72)</td><td>201 ± 1</td></tr>
+            <tr><td>Camera</td><td>PID</td><td>3</td><td>0</td><td>3.88 ± 1.20 (3.14–5.26)</td><td>2.68 ± 1.46 (1.18–4.08)</td><td>3.17 ± 1.33 (2.35–4.71)</td><td>173 ± 0</td></tr>
+            <tr><td>IMU</td><td>LQR</td><td>5</td><td>0</td><td>5.36 ± 1.91 (3.73–7.81)</td><td>5.98 ± 3.19 (1.85–10.70)</td><td>5.52 ± 2.27 (2.99–8.63)</td><td>204 ± 10</td></tr>
+            <tr><td>IMU</td><td>PID</td><td>5</td><td>0</td><td>5.46 ± 1.36 (3.82–7.15)</td><td>6.26 ± 3.28 (2.18–11.01)</td><td>5.41 ± 2.03 (2.79–8.08)</td><td>216 ± 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:1rem;">The direct estimator is the most repeatable: its circle error varies by only ±0.05 mm across seeds. The IMU estimator's spread is larger because dead-reckoning drift accumulates differently in each run.</p>
+    </section>
+
+    <section class="block" id="sensing">
+      <div class="eyebrow">07 · Sensitivity to sensing delay</div>
+      <h2>How much <em>latency</em> it tolerates</h2>
+      <p>The direct estimator was run with extra sensing delay added to the loop. The circle error grows steadily with delay, and LQR is more sensitive than PID. No run lost the ball in this range.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead>
+            <tr><th>Added delay [ms]</th><th>PID circle RMS [mm]</th><th>PID hold [mm]</th><th>LQR circle RMS [mm]</th><th>LQR hold [mm]</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>2.58</td><td>2.10</td><td>2.58</td><td>1.41</td></tr>
+            <tr><td>10</td><td>2.77</td><td>2.09</td><td>2.88</td><td>1.45</td></tr>
+            <tr><td>20</td><td>2.97</td><td>2.11</td><td>3.17</td><td>1.54</td></tr>
+            <tr><td>30</td><td>3.18</td><td>2.08</td><td>3.37</td><td>1.55</td></tr>
+            <tr><td>40</td><td>3.40</td><td>2.11</td><td>3.96</td><td>1.87</td></tr>
+            <tr><td>60</td><td>3.82</td><td>2.22</td><td>5.03</td><td>2.16</td></tr>
+            <tr><td>80</td><td>4.28</td><td>2.32</td><td>5.81</td><td>2.25</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="design">
+      <div class="eyebrow">08 · Controller design</div>
+      <h2>Gains and <em>step response</em></h2>
+      <p>The LQR gains were designed for the linearised plant. The closed-loop poles are all stable, with the slowest at about −0.26 rad/s. The PID gains were tuned on the same plant.</p>
+      <div class="grid2">
+        <div class="table-wrap">
+          <table class="plain">
+            <thead><tr><th>Controller</th><th>Parameters</th></tr></thead>
+            <tbody>
+              <tr><td>PID</td><td>kp = 10.0, kd = 5.6, ki = 3.0; integrator zone 25 mm, integrator limit 0.04</td></tr>
+              <tr><td>LQR gains K</td><td>[0.949, 4.092, 1.711, 0.359]</td></tr>
+              <tr><td>LQR closed-loop poles [1/s]</td><td>−27.1, −8.3, −3.4, −0.26</td></tr>
+              <tr><td>Rolling gain</td><td>7.01</td></tr>
+              <tr><td>Ball height used in plant</td><td>72 mm</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table class="plain">
+            <thead><tr><th>Tilt step</th><th>10% [ms]</th><th>50% [ms]</th><th>63% [ms]</th><th>90% [ms]</th></tr></thead>
+            <tbody>
+              <tr><td>1°</td><td>9</td><td>30</td><td>37</td><td>60</td></tr>
+              <tr><td>3°</td><td>11</td><td>32</td><td>39</td><td>61</td></tr>
+              <tr><td>6°</td><td>17</td><td>52</td><td>62</td><td>89</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p class="note" style="margin-top:1rem;">The platform's tilt response is fast: the platform reaches 90% of a commanded tilt in 60–89 ms, depending on the step size.</p>
+    </section>
+
+    <section class="block" id="ablation">
+      <div class="eyebrow">09 · Coordinate frame ablation</div>
+      <h2>Plate frame vs <em>horizontal</em> frame</h2>
+      <p>The controller can work in the plate frame or the horizontal frame. The table compares the two, with the direct estimator.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead><tr><th>Frame and controller</th><th>Circle RMS [mm]</th><th>Final hold [mm]</th><th>Tilt jitter [deg/step]</th><th>Peak force [N]</th></tr></thead>
+          <tbody>
+            <tr><td>Plate frame, PID</td><td>1.08</td><td>2.24</td><td>0.154</td><td>195</td></tr>
+            <tr><td>Plate frame, LQR</td><td>18.56</td><td>14.16</td><td>0.75</td><td>239</td></tr>
+            <tr><td>Horizontal frame, PID</td><td>2.58</td><td>2.10</td><td>0.131</td><td>211</td></tr>
+            <tr><td>Horizontal frame, LQR</td><td>2.58</td><td>1.41</td><td>0.31</td><td>200</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:1rem;">The plate-frame LQR result is much worse, so the horizontal frame is used for LQR. The plate-frame PID has the best circle tracking, at the cost of higher tilt jitter.</p>
+    </section>
+
+    <section class="block" id="force">
+      <div class="eyebrow">10 · Cylinder force fighting</div>
+      <h2>Load sharing between <em>cylinders</em></h2>
+      <p>When the four cylinders push against each other, forces can fight and load one cylinder more than the others. A force-fight compensation was tested with and without cylinder offsets.</p>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead><tr><th>Setting</th><th>Circle RMS [mm]</th><th>Final hold [mm]</th><th>Fight RMS [N]</th><th>Fight max [N]</th></tr></thead>
+          <tbody>
+            <tr><td>Compensation off</td><td>2.57</td><td>1.41</td><td>4.86</td><td>29.6</td></tr>
+            <tr><td>Compensation on</td><td>2.58</td><td>1.41</td><td>4.63</td><td>28.8</td></tr>
+            <tr><td>Offsets, compensation off</td><td>2.56</td><td>1.42</td><td>37.7</td><td>53.4</td></tr>
+            <tr><td>Offsets, compensation on</td><td>2.56</td><td>1.43</td><td>4.63</td><td>28.8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:1rem;">With cylinder offsets, the fight RMS rises from 4.6 N to 37.7 N, and compensation brings it back down to 4.6 N. Tracking accuracy is unchanged in all four settings.</p>
+    </section>
+
+
+
+
+
+    <section class="block" id="links">
+      <div class="eyebrow">11 · Paper and code</div>
+      <p>
+        <a href="https://github.com/msmidhunms/hydra-balance" target="_blank" rel="noopener">Code on GitHub →</a> ·
+        <a href="media/paper.pdf">Read the technical paper (PDF) →</a>
+      </p>
+      <p class="note" style="margin-top:1rem;">Simulation only. The code and tests were run natively with ROS 2 Jazzy and MuJoCo. The Docker image is set up but not yet test-built.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script>
+    window.bbArch = Arch.mount(document.getElementById('bb-arch'), {
+      id: 'bb', width: 1000, height: 520, label: 'ROS 2 graph of the self-balancing ball',
+      onMode: function (m) { if (window.bbDemo) window.bbDemo.setMode(m); },
+      columns: [
+        { x: 40, w: 200, label: 'Sensors' }, { x: 300, w: 230, label: 'Estimation' },
+        { x: 590, w: 180, label: 'Control' }, { x: 830, w: 150, label: 'Plant' }
+      ],
+      modes: [
+        { id: 'direct', label: 'Model 1 · Touch panel', desc: 'The touch panel under the rubber top measures the contact point at 100 Hz with 0.8 mm noise. A model-based Kalman filter gives position and velocity. This is the most accurate and most repeatable model.' },
+        { id: 'camera', label: 'Model 2 · Camera', desc: 'An overhead camera at 60 fps with 12 ms latency. The ball is found as a colour blob, its pixel ray is intersected with the plate plane (pose from the cylinder LVDTs), and a delay-compensated Kalman filter cancels the latency.' },
+        { id: 'imu', label: 'Model 3 · IMU in ball', desc: 'An IMU inside the ball: accelerometer, gyro and magnetometer at 200 Hz, biased and noisy. A Mahony AHRS tracks attitude, rolling-without-slip odometry turns rotation into position, and a Kalman filter fuses it. Drift makes this the hardest model.' }
+      ],
+      nodes: [
+        { id: 'touch', x: 40, y: 64, w: 200, h: 64, title: 'Touch panel', sub: '/ball/touch_panel', modes: ['direct'],
+          info: { body: 'Resistive panel under the rubber top that reports where the ball presses.', facts: ['100 Hz', '0.8 mm noise'], topics: ['/ball/touch_panel'] } },
+        { id: 'cam', x: 40, y: 146, w: 200, h: 64, title: 'Overhead camera', sub: '/camera/image_raw', modes: ['camera'],
+          info: { body: 'Single camera looking down at the plate.', facts: ['640×480 at 60 fps', '12 ms latency', 'About 1.5 mm calibration bias'], topics: ['/camera/image_raw', '/camera/camera_info'] } },
+        { id: 'imu', x: 40, y: 228, w: 200, h: 64, title: 'IMU in the ball', sub: '/ball/imu · /ball/mag', modes: ['imu'],
+          info: { body: 'Inertial sensors that roll with the ball.', facts: ['Accelerometer, gyro, magnetometer', '200 Hz, with bias and noise'], topics: ['/ball/imu', '/ball/mag'] } },
+        { id: 'lvdt', x: 40, y: 310, w: 200, h: 64, title: 'Cylinder LVDTs', sub: '/platform/joint_states',
+          info: { body: 'Position and force feedback from each hydraulic cylinder. The strokes give the plate pose.', facts: ['200 Hz', 'Stroke (m) and force (N) for all four cylinders'], topics: ['/platform/joint_states'] } },
+        { id: 'est', x: 300, y: 64, w: 230, h: 310, title: 'Estimator', sub: '/ball/odom', kind: 'core',
+          lines: {
+            direct: ['Touch point', '↓', 'Model-based Kalman filter', '↓', 'Position + velocity', '', 'Est. RMS ≈ 0.9 mm'],
+            camera: ['HSV colour blob', '↓', 'Pixel ray ∩ plate plane', '(plate pose from LVDTs)', '↓', 'Delay-compensated KF', '', 'Est. RMS ≈ 2.4 mm'],
+            imu: ['Mahony AHRS', '(attitude + gyro bias)', '↓', 'Rolling-without-slip odometry', '↓', 'Kalman filter', '', 'Est. RMS ≈ 4.4 mm (drift)']
+          },
+          info: { byMode: {
+              direct: 'Model-based Kalman filter on the touch-panel samples. Estimation RMS is about 0.9 mm in the offline run.',
+              camera: 'Finds the ball in the image, casts a ray through its pixel and intersects it with the plate plane, then compensates the 12 ms delay in the Kalman filter. Estimation RMS is about 2.4 mm offline, including the calibration bias.',
+              imu: 'Mahony AHRS for attitude and gyro bias, rolling-without-slip odometry for position, then a Kalman filter. Estimation RMS is about 4.4 mm offline, mostly from dead-reckoning drift.' },
+            topics: ['/ball/odom', '/ball/position_plate'] } },
+        { id: 'ref', x: 590, y: 64, w: 180, h: 72, title: 'Reference', sub: '/controller/reference',
+          info: { body: 'Generates the target path for the 24 s scenario: holds, two laps of an 8 cm circle and set-point changes.', topics: ['/controller/reference'] } },
+        { id: 'ctrl', x: 590, y: 176, w: 180, h: 160, title: 'Controller', sub: '/platform/stroke_cmd', kind: 'core',
+          lines: ['PID or LQR', '→ plate tilt (≤ 8°)', '→ 4 cylinder strokes', '[s1..s4, ṡ1..ṡ4]'],
+          info: { body: 'Turns the position error into a plate tilt, then into stroke and stroke-rate commands for the four cylinders.',
+            facts: ['PID: kp 10, kd 5.6, ki 3 (integrator zone 25 mm)', 'LQR K = [0.949, 4.092, 1.711, 0.359]', 'LQR closed-loop poles: −27.1, −8.3, −3.4, −0.26 s⁻¹'],
+            topics: ['/platform/stroke_cmd', '/controller/tilt_cmd'] } },
+        { id: 'sim', x: 830, y: 64, w: 150, h: 310, title: 'MuJoCo', sub: '/clock',
+          lines: ['Round plate', '4 servo-valve', 'hydraulic cylinders', 'Rolling ball', '', 'Sensor models', 'Rendering'],
+          info: { body: 'Physics and rendering. The simulator owns time on /clock and every node uses use_sim_time, so a slower simulation still gives correct results.',
+            facts: ['Tilt reaches 90% of a 1° step in 60 ms', 'Tilt reaches 90% of a 6° step in 89 ms'], topics: ['/clock', '/ball/ground_truth'] } },
+        { id: 'log', x: 590, y: 396, w: 180, h: 72, title: 'Metrics & video', sub: 'evaluation only', kind: 'eval',
+          info: { body: 'Ground truth is used only for evaluation, never by the controller. Each run writes metrics, plots and a HUD video.',
+            facts: ['RMS tracking, circle and hold error', 'Estimation error vs ground truth', '1280×720 HUD video at 30 fps'], topics: ['*_metrics.json', '/ball/ground_truth'] } }
+      ],
+      edges: [
+        { from: 'touch', to: 'est', label: '100 Hz', lt: 0.3 },
+        { from: 'cam', to: 'est', label: '60 fps', lt: 0.3 },
+        { from: 'imu', to: 'est', label: '200 Hz', lt: 0.3 },
+        { from: 'lvdt', to: 'est', label: 'plate pose', lt: 0.3 },
+        { from: 'est', to: 'ctrl', label: 'position, velocity', lt: 0.45 },
+        { from: 'ref', to: 'ctrl', fs: 'b', ts: 't', label: 'target', lx: 30, ly: 10 },
+        { from: 'ctrl', to: 'sim', label: 'stroke cmd', lt: 0.5 },
+        { from: 'sim', to: 'touch', d: 'M905,374 L905,496 L16,496 L16,96 L38,96', label: 'sensor topics on /clock', lt: 0.45, always: true },
+        { from: 'sim', to: 'log', dashed: true, d: 'M870,374 C870,432 820,432 772,432', label: 'ground truth', lt: 0.5, ly: -2 },
+        { from: 'est', to: 'log', dashed: true, d: 'M415,374 C415,432 520,432 588,432', label: 'estimate', lt: 0.6 }
+      ]
+    });
+  </script>
+  <script src="bb-demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Content Platform | Midhun</title>
+  <meta name="description" content="Case study: an LLM content platform with research, writing, images, planning and publishing, and an in-app AI assistant with guardrails.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← AI/ML</a></li>
+        <li><a href="#capabilities">Capabilities</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#assistant">Assistant</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">AI &amp; ML · Company work</div>
+      <h1>AI content <em>platform</em></h1>
+      <p class="lead">A web platform where marketing teams research, write, illustrate, plan and publish content with LLMs, in one place.</p>
+      <div class="meta" style="justify-content:center;">
+        <span class="tag">LLMs</span><span class="tag">Image generation</span><span class="tag">Agents &amp; tool use</span><span class="tag">Guardrails</span><span class="tag">React</span><span class="tag private">Code private</span>
+      </div>
+    </header>
+
+    <section class="block" id="overview">
+      <div class="eyebrow">01 · Overview</div>
+      <h2>The <em>problem</em></h2>
+      <p>Content teams usually jump between separate tools to research a topic, plan keywords, draft copy, make images, schedule posts and publish. This platform brings the whole workflow together, with LLMs doing the heavy lifting at each step and people reviewing and editing together.</p>
+      <p class="note">My role: I lead the AI team (two engineers) building the platform's AI features.</p>
+    </section>
+
+    <section class="block" id="capabilities">
+      <div class="eyebrow">02 · Capabilities</div>
+      <h2>What it <em>does</em></h2>
+      <div class="features">
+        <div class="feature"><span class="k">Research</span><h3>Internet research</h3><p>Gathers material from the web on a topic before writing starts.</p></div>
+        <div class="feature"><span class="k">Plan</span><h3>Keyword planner &amp; calendar</h3><p>Plans keywords for search and schedules content on a calendar.</p></div>
+        <div class="feature"><span class="k">Write</span><h3>LLM content writing</h3><p>Drafts blogs, SEO articles, social media posts and website copy.</p></div>
+        <div class="feature"><span class="k">Illustrate</span><h3>Image generation</h3><p>Creates images to go with each piece of content.</p></div>
+        <div class="feature"><span class="k">Collaborate</span><h3>Collaborative editing</h3><p>Teams edit and review the same document together.</p></div>
+        <div class="feature"><span class="k">Publish</span><h3>WordPress &amp; social</h3><p>Publishes straight to WordPress sites and social media accounts.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">03 · Architecture</div>
+      <h2>How it <em>fits together</em></h2>
+      <p>Switch between the standard content workflow and the in-app assistant to see which paths are used. This is a simplified view of the system.</p>
+      <div class="arch" id="cp-arch">
+        <div class="arch-tabs" role="tablist" aria-label="Workflow"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="assistant">
+      <div class="eyebrow">04 · In-app assistant</div>
+      <h2>An agent inside the <em>editor</em></h2>
+      <p>The newest piece is an AI assistant that works inside the document the user has open. Rather than producing text in a separate chat, it acts through the platform itself.</p>
+      <div class="features">
+        <div class="feature"><span class="k">Context</span><h3>Reads the open document</h3><p>Uses the current draft as context for what the user is asking.</p></div>
+        <div class="feature"><span class="k">Tools</span><h3>Calls the platform's tools</h3><p>Uses the existing writing and image tools instead of duplicating them.</p></div>
+        <div class="feature"><span class="k">Action</span><h3>Generates and edits</h3><p>Writes new content and makes edits directly in the document.</p></div>
+        <div class="feature"><span class="k">Safety</span><h3>Guardrails</h3><p>An agent harness with defences against prompt injection and against generating malicious snippets.</p></div>
+      </div>
+      <p class="note" style="margin-top:1rem;">Why guardrails matter here: the assistant reads content that may come from the web or other users, and that content can contain instructions aimed at the model. The harness has to keep those instructions from steering the agent's tool calls.</p>
+    </section>
+
+    <section class="block" id="notes">
+      <div class="eyebrow">05 · Note</div>
+      <p>This is a company product, so the code is proprietary and the product isn't named here. This page describes the system and my part in it.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script>
+    Arch.mount(document.getElementById('cp-arch'), {
+      id: 'cp', width: 1000, height: 400, label: 'AI content platform architecture',
+      columns: [
+        { x: 40, w: 200, label: 'Workspace' }, { x: 300, w: 220, label: 'Orchestration' },
+        { x: 580, w: 190, label: 'AI services' }, { x: 830, w: 150, label: 'Channels' }
+      ],
+      modes: [
+        { id: 'workflow', label: 'Content workflow', desc: 'A user plans and drafts in the workspace. Research feeds the LLM writer, images are generated alongside, and finished pieces are published to WordPress and social media.' },
+        { id: 'assistant', label: 'In-app assistant', desc: 'The user asks the assistant for a change. It reads the open document, plans tool calls, passes them through the guardrails, and writes the result back into the document.' }
+      ],
+      nodes: [
+        { id: 'editor', x: 40, y: 64, w: 200, h: 150, title: 'Workspace', sub: 'web app',
+          lines: ['Collaborative editor', 'Keyword planner', 'Content calendar'],
+          info: { body: 'Where users plan, draft, review and schedule content together.', facts: ['Collaborative editing', 'Keyword planning', 'Content calendar'] } },
+        { id: 'assistant', x: 300, y: 64, w: 220, h: 120, title: 'AI assistant', sub: 'agent harness', kind: 'core', modes: ['assistant'],
+          lines: ['Reads the open document', 'Plans tool calls', 'Edits in place'],
+          info: { body: 'An agent that works inside the editor and acts through the platform\'s own tools.' } },
+        { id: 'guard', x: 300, y: 230, w: 220, h: 110, title: 'Guardrails', sub: 'safety layer', kind: 'core', modes: ['assistant'],
+          lines: ['Prompt-injection defence', 'Malicious snippet checks'],
+          info: { body: 'Sits between the agent and the tools, so instructions hidden in documents or web content can\'t steer what the agent does.' } },
+        { id: 'research', x: 580, y: 64, w: 190, h: 70, title: 'Web research', sub: 'retrieval',
+          info: { body: 'Collects source material from the internet for a topic.' } },
+        { id: 'writer', x: 580, y: 164, w: 190, h: 90, title: 'LLM writer', sub: 'generation',
+          lines: ['Blogs · SEO · social'],
+          info: { body: 'Generates blog posts, SEO articles, social media posts and website copy.' } },
+        { id: 'image', x: 580, y: 284, w: 190, h: 70, title: 'Image generation', sub: 'generation',
+          info: { body: 'Creates images to accompany content.' } },
+        { id: 'publish', x: 830, y: 64, w: 150, h: 120, title: 'Publishing', sub: 'integrations',
+          lines: ['WordPress', 'Social media'],
+          info: { body: 'Pushes finished content to WordPress sites and social media accounts.' } }
+      ],
+      edges: [
+        { from: 'editor', to: 'research', modes: ['workflow'], label: 'topic', lt: 0.3 },
+        { from: 'editor', to: 'writer', modes: ['workflow'], label: 'brief + keywords', lt: 0.3 },
+        { from: 'editor', to: 'image', modes: ['workflow'], label: 'image prompt', lt: 0.3 },
+        { from: 'research', to: 'writer', fs: 'b', ts: 't', modes: ['workflow'], label: 'sources', lx: 30, ly: 8 },
+        { from: 'writer', to: 'publish', label: 'content', lt: 0.55 },
+        { from: 'image', to: 'publish', label: 'images', lt: 0.6 },
+        { from: 'editor', to: 'assistant', label: 'request', lt: 0.45 },
+        { from: 'assistant', to: 'guard', fs: 'b', ts: 't', label: 'tool call', lx: 34, ly: 8 },
+        { from: 'guard', to: 'research', lt: 0.6 },
+        { from: 'guard', to: 'writer', label: 'checked call', lt: 0.6 },
+        { from: 'guard', to: 'image', lt: 0.6 },
+        { from: 'assistant', to: 'editor', d: 'M300,168 C270,168 270,196 242,196', label: 'edits', lt: 0.5, ly: 22 }
+      ]
+    });
+  </script>
+</body>
+</html>

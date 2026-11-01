@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disentangled Robot Tasks | Midhun</title>
+  <meta name="description" content="Why robots should see tasks the way people see objects: by shape, size, position and orientation, not pixels. An interactive explainer of disentangled latent spaces with a β-VAE.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin:1rem 0; }
+    .panel { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:1rem; }
+    .panel h3 { margin:.1rem 0 .5rem; font-size:1rem; }
+    .panel canvas { width:100%; height:auto; display:block; border-radius:10px; background:#f4f2fb; }
+    .facts { list-style:none; padding:0; margin:.7rem 0 0; display:grid; grid-template-columns:1fr 1fr; gap:.3rem .8rem; font-size:.92rem; }
+    .facts li span { color:var(--muted); }
+    .demo { display:grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap:1.2rem; align-items:start; margin-top:1rem; }
+    .demo canvas { width:100%; height:auto; display:block; border-radius:14px; background:#f4f2fb; border:1px solid var(--border); }
+    .knobs label { display:grid; grid-template-columns: 2.2rem 1fr 7.5rem; gap:.5rem; align-items:center; margin:.55rem 0; font-size:.92rem; }
+    .knobs label b { font-family:var(--mono); color:var(--accent); }
+    .knobs input { width:100%; accent-color:var(--accent); }
+    .knobs .what { color:var(--muted); font-size:.85rem; }
+    .effect { margin-top:1rem; border-top:1px solid var(--border); padding-top:.8rem; }
+    .effect .row { display:grid; grid-template-columns: 6rem 1fr; gap:.5rem; align-items:center; margin:.3rem 0; font-size:.88rem; }
+    .effect .bar { height:10px; border-radius:6px; background:#ebe8f6; overflow:hidden; }
+    .effect .bar i { display:block; height:100%; background:var(--accent); width:0; transition:width .25s; }
+    .effect p { font-size:.88rem; color:var(--muted); margin:.2rem 0 .6rem; }
+    .why { display:grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap:.8rem; margin-top:1rem; }
+    .why div { border:1px solid var(--border); border-radius:12px; padding:.9rem 1rem; background:var(--surface); }
+    .why h3 { margin:0 0 .35rem; font-size:1rem; }
+    .why p { margin:0; font-size:.92rem; }
+    .btnrow { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.6rem; }
+    .btnrow button { border:1px solid #d6d0ec; background:#fff; border-radius:999px; padding:.35rem .85rem; cursor:pointer; font:inherit; color:#3b3754; }
+    @media (max-width: 760px) { .split, .demo { grid-template-columns: 1fr; } .knobs label { grid-template-columns: 2rem 1fr; } .knobs .what { grid-column: 1 / -1; } }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#idea">The idea</a></li>
+        <li><a href="#demo">Try it</a></li>
+        <li><a href="#robots">Why robots</a></li>
+        <li><a href="#how">How</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Representation learning</div>
+      <h1>Seeing tasks the way <em>people</em> do</h1>
+      <p class="lead">People describe what they see by its factors: shape, size, position, orientation. A computer sees only pixels. A disentangled model learns those factors on its own, so a robot can be told what to change, one factor at a time.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">β-VAE</span><span class="tag">Disentanglement</span><span class="tag">Interpretable control</span><span class="tag">SCARA</span></div>
+    </header>
+
+    <section class="block" id="idea">
+      <div class="eyebrow">01 · The idea</div>
+      <h2>Factors, not <em>pixels</em></h2>
+      <p>Show someone a small star near the top left and they will describe it in a few words. The same image, as a computer receives it, is a grid of numbers. No single number means "star" or "small", and moving the star a little changes almost all of them.</p>
+      <div class="split">
+        <div class="panel">
+          <h3>What a person sees</h3>
+          <canvas id="see-human" width="360" height="260" aria-label="A shape as a person sees it"></canvas>
+          <ul class="facts" id="facts"></ul>
+        </div>
+        <div class="panel">
+          <h3>What a computer sees</h3>
+          <canvas id="see-pixels" width="360" height="260" aria-label="The same shape as a grid of pixel values"></canvas>
+          <p class="note" id="pix-note" style="margin:.7rem 0 0;"></p>
+        </div>
+      </div>
+      <div class="btnrow"><button type="button" id="shuffle">Show another shape</button></div>
+    </section>
+
+    <section class="block" id="demo">
+      <div class="eyebrow">02 · Try it</div>
+      <h2>Five knobs, <em>two</em> kinds of model</h2>
+      <p>A generative model controls its output through a few hidden numbers, the latent code z. Move the knobs below. In a <strong>disentangled</strong> model each knob changes one factor. In an <strong>entangled</strong> model each knob changes several factors at once, so nobody can say what a knob means. The robot arm draws whatever the code describes.</p>
+      <div class="toggle" id="mode"></div>
+      <div class="demo">
+        <canvas id="arm" width="560" height="460" aria-label="SCARA arm drawing the shape described by the latent code"></canvas>
+        <div>
+          <div class="knobs" id="knobs"></div>
+          <div class="btnrow"><button type="button" id="reset">Reset</button><button type="button" id="random">Random code</button></div>
+          <div class="effect">
+            <p id="effect-title">What the last knob you moved changed:</p>
+            <div id="effect"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="robots">
+      <div class="eyebrow">03 · Why robots</div>
+      <h2>Why this matters for <em>robot tasks</em></h2>
+      <p>For a robot, the output is not an image but a motion: a trajectory of joint angles. If the model that generates motions has disentangled factors, those factors become controls a person can use.</p>
+      <div class="why">
+        <div><h3>Direct control</h3><p>"Draw it 5 cm further left" is one knob. With pixels or an entangled code, it is a new search or new training data.</p></div>
+        <div><h3>New combinations</h3><p>A shape seen only in one size and place can be produced in any size and place, because the factors are learned separately.</p></div>
+        <div><h3>Fewer demonstrations</h3><p>The model learns each factor once instead of learning every combination, which matters when robot data is slow to collect.</p></div>
+        <div><h3>Easier to trust</h3><p>Each part of the code has a meaning that can be checked, which helps debug and certify robot behaviour.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="how">
+      <div class="eyebrow">04 · How</div>
+      <h2>How a β-VAE <em>learns</em> the factors</h2>
+      <p>A variational autoencoder compresses each example into a short code and rebuilds it. The β-VAE adds weight β to the term that keeps the code simple and close to independent Gaussian noise:</p>
+      <div class="eq">loss = reconstruction error + β · KL( q(z | x) ‖ N(0, I) )</div>
+      <p>With β above 1, the cheapest way to rebuild the data is to put each independent factor in its own code. Too large a β costs accuracy, so β is a trade-off between clarity and precision.</p>
+      <p>In my PhD work, I applied this to a robot dataset recorded on a SCARA arm, built around five known factors: x position, y position, orientation, scale and shape. The model saw only the trajectories, with no labels for the factors.</p>
+      <p class="note">Read the full study: <a href="https://doi.org/10.32985/ijeces.13.7.8" target="_blank" rel="noopener">Task Level Disentanglement Learning in Robotics Using βVAE</a>, International Journal of Electrical and Computer Engineering Systems, 2022. The thesis covers it in <a href="../../assets/thesis/chapter-5.pdf" target="_blank" rel="noopener">chapter 5 (PDF)</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/thesis.js"></script>
+  <script>
+  (function () {
+    const N = 160;
+    const SHAPES = ['circle', 'triangle', 'square', 'star'];
+    function polygon(verts) {
+      // sample N points evenly along a closed polygon, starting at the top
+      const segs = [], lens = []; let total = 0;
+      for (let i = 0; i < verts.length; i++) { const a = verts[i], b = verts[(i + 1) % verts.length]; const l = Math.hypot(b[0] - a[0], b[1] - a[1]); segs.push([a, b]); lens.push(l); total += l; }
+      const pts = [];
+      for (let k = 0; k < N; k++) {
+        let d = total * k / N, i = 0;
+        while (d > lens[i]) { d -= lens[i]; i++; }
+        const [a, b] = segs[i], t = d / lens[i];
+        pts.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+      return pts;
+    }
+    function regular(n, r0, r1) {
+      const v = [], m = r1 === undefined ? n : n * 2;
+      for (let i = 0; i < m; i++) { const r = (r1 === undefined || i % 2 === 0) ? r0 : r1; const a = -Math.PI / 2 + i * 2 * Math.PI / m; v.push([r * Math.cos(a), r * Math.sin(a)]); }
+      return v;
+    }
+    const BASE = {
+      circle: Array.from({ length: N }, (_, k) => { const a = -Math.PI / 2 + k * 2 * Math.PI / N; return [Math.cos(a), Math.sin(a)]; }),
+      triangle: polygon(regular(3, 1.1)),
+      square: polygon([[-0.85, -0.85], [0.85, -0.85], [0.85, 0.85], [-0.85, 0.85]]).map(p => p).slice(),
+      star: polygon(regular(5, 1.1, 0.45))
+    };
+    // align square to start at top centre
+    BASE.square = (function () { const s = BASE.square; const shift = Math.round(N / 8); return s.slice(-shift).concat(s.slice(0, -shift)); })();
+
+    function shapePoints(s) { // s in [0,3], blends between neighbouring shapes
+      const i = Math.min(2, Math.floor(s)), t = s - i, A = BASE[SHAPES[i]], B = BASE[SHAPES[i + 1]];
+      return A.map((p, k) => [p[0] + (B[k][0] - p[0]) * t, p[1] + (B[k][1] - p[1]) * t]);
+    }
+    function shapeName(s) { const i = Math.round(s); return SHAPES[Math.max(0, Math.min(3, i))]; }
+
+    // factor ranges, from a normalised value in [-1, 1]
+    const FACT = [
+      { key: 'x', name: 'x position', map: v => v * 0.16, fmt: v => (v * 100).toFixed(0) + ' cm' },
+      { key: 'y', name: 'y position', map: v => 0.36 + v * 0.08, fmt: v => (v * 100).toFixed(0) + ' cm' },
+      { key: 'size', name: 'size', map: v => 0.06 + v * 0.03, fmt: v => (v * 200).toFixed(0) + ' cm wide' },
+      { key: 'rot', name: 'rotation', map: v => v * Math.PI / 2, fmt: v => (v * 180 / Math.PI).toFixed(0) + '°' },
+      { key: 'shape', name: 'shape', map: v => (v + 1) * 1.5, fmt: v => shapeName(v) }
+    ];
+    // a fixed mixing matrix for the entangled model (rows: factors, cols: knobs)
+    const M = [
+      [0.55, -0.45, 0.35, 0.40, -0.30],
+      [0.40, 0.50, -0.45, 0.25, 0.35],
+      [-0.35, 0.40, 0.50, -0.30, 0.45],
+      [0.45, 0.30, 0.40, -0.50, -0.35],
+      [-0.30, 0.45, -0.35, 0.40, 0.55]
+    ];
+
+    let mode = 'dis', z = [0, 0, 0, 0, 0], last = null;
+    function factors() {
+      const f = mode === 'dis' ? z.slice() : M.map(row => row.reduce((s, m, j) => s + m * z[j], 0));
+      return f.map(v => Math.max(-1, Math.min(1, v)));
+    }
+    function pathWorld(f) {
+      const x0 = FACT[0].map(f[0]), y0 = FACT[1].map(f[1]), sc = FACT[2].map(f[2]), r = FACT[3].map(f[3]), s = FACT[4].map(f[4]);
+      const c = Math.cos(r), sn = Math.sin(r);
+      return shapePoints(s).map(p => [x0 + sc * (p[0] * c - p[1] * sn), y0 + sc * (p[0] * sn + p[1] * c)]);
+    }
+
+    // ---------- section 01: person vs pixels ----------
+    const human = document.getElementById('see-human'), pix = document.getElementById('see-pixels');
+    const hc = human.getContext('2d'), pc = pix.getContext('2d');
+    let sample = [-0.5, 0.6, -0.4, 0.2, 1];
+    function drawShape(ctx, pts, W, H, scale, ox, oy, stroke, lw) {
+      ctx.beginPath();
+      pts.forEach((p, i) => { const X = ox + p[0] * scale, Y = oy + p[1] * scale; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); });
+      ctx.closePath(); ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke();
+    }
+    function localPts(f) { // shape in a 2x2 box for the illustration, no arm
+      const s = FACT[4].map(f[4]), r = FACT[3].map(f[3]), sz = 0.35 + (f[2] + 1) * 0.2, c = Math.cos(r), sn = Math.sin(r);
+      return shapePoints(s).map(p => [f[0] * 0.55 + sz * (p[0] * c - p[1] * sn), -f[1] * 0.45 + sz * (p[0] * sn + p[1] * c)]);
+    }
+    function drawIdea() {
+      const W = human.width, H = human.height, pts = localPts(sample);
+      hc.clearRect(0, 0, W, H);
+      drawShape(hc, pts, W, H, 110, W / 2, H / 2, '#5a48c8', 4);
+      const f = sample, s = FACT[4].map(f[4]);
+      const where = (f[1] > 0.25 ? 'top' : f[1] < -0.25 ? 'bottom' : 'middle') + (f[0] < -0.25 ? ' left' : f[0] > 0.25 ? ' right' : '');
+      document.getElementById('facts').innerHTML =
+        '<li><span>Shape:</span> ' + shapeName(s) + '</li>' +
+        '<li><span>Size:</span> ' + (f[2] < -0.3 ? 'small' : f[2] > 0.3 ? 'large' : 'medium') + '</li>' +
+        '<li><span>Where:</span> ' + where + '</li>' +
+        '<li><span>Turned:</span> ' + Math.round(FACT[3].map(f[3]) * 180 / Math.PI) + '°</li>';
+      // pixel grid
+      const G = 18, off = document.createElement('canvas'); off.width = G; off.height = Math.round(G * H / W);
+      const oc = off.getContext('2d');
+      drawShape(oc, pts, off.width, off.height, 110 * G / W, off.width / 2, off.height / 2, '#000', 1.6);
+      const d = oc.getImageData(0, 0, off.width, off.height).data, cw = W / off.width, ch = H / off.height;
+      pc.clearRect(0, 0, W, H); pc.font = '9px ui-monospace, Menlo, monospace'; pc.textAlign = 'center'; pc.textBaseline = 'middle';
+      for (let j = 0; j < off.height; j++) for (let i = 0; i < off.width; i++) {
+        const v = Math.round(d[(j * off.width + i) * 4 + 3] / 255 * 9);
+        pc.fillStyle = 'rgba(90,72,200,' + (v / 9 * 0.8).toFixed(2) + ')';
+        pc.fillRect(i * cw, j * ch, cw - 1, ch - 1);
+        pc.fillStyle = v > 4 ? '#fff' : '#8a86a3';
+        pc.fillText(String(v), i * cw + cw / 2, j * ch + ch / 2);
+      }
+      document.getElementById('pix-note').textContent = off.width * off.height + ' numbers. None of them means "' + shapeName(s) + '" or "' + (f[2] < -0.3 ? 'small' : f[2] > 0.3 ? 'large' : 'medium') + '".';
+    }
+    document.getElementById('shuffle').addEventListener('click', function () {
+      sample = [Math.random() * 1.6 - 0.8, Math.random() * 1.6 - 0.8, Math.random() * 2 - 1, Math.random() * 2 - 1, Math.round(Math.random() * 3) / 1.5 - 1];
+      drawIdea();
+    });
+    drawIdea();
+
+    // ---------- section 02: the demo ----------
+    const knobs = document.getElementById('knobs');
+    function knobLabel(i) {
+      if (mode === 'dis') return FACT[i].name;
+      return '? (mixed)';
+    }
+    function buildKnobs() {
+      knobs.innerHTML = z.map((v, i) =>
+        '<label><b>z' + (i + 1) + '</b><input type="range" min="-1" max="1" step="0.01" value="' + v + '" data-i="' + i + '" aria-label="latent z' + (i + 1) + '"><span class="what" id="what' + i + '">' + knobLabel(i) + '</span></label>').join('');
+      knobs.querySelectorAll('input').forEach(inp => inp.addEventListener('input', function () {
+        const i = +this.dataset.i; z[i] = parseFloat(this.value); last = i; showEffect(); restart();
+      }));
+    }
+    const effect = document.getElementById('effect');
+    function showEffect() {
+      const col = last === null ? null : (mode === 'dis' ? FACT.map((_, r) => r === last ? 1 : 0) : M.map(row => Math.abs(row[last]) / 0.55));
+      document.getElementById('effect-title').textContent = last === null ? 'Move a knob to see which factors it changes.' : 'What z' + (last + 1) + ' changes:';
+      effect.innerHTML = FACT.map((f, r) => '<div class="row"><span>' + f.name + '</span><div class="bar"><i style="width:' + (col ? Math.round(col[r] * 100) : 0) + '%"></i></div></div>').join('');
+    }
+    T.toggles(document.getElementById('mode'), [{ label: 'Disentangled (β-VAE)', value: 'dis' }, { label: 'Entangled (plain VAE)', value: 'ent' }], function (v) { mode = v; buildKnobs(); showEffect(); restart(); });
+    document.getElementById('reset').addEventListener('click', function () { z = [0, 0, 0, 0, 0]; last = null; buildKnobs(); showEffect(); restart(); });
+    document.getElementById('random').addEventListener('click', function () { z = z.map(() => +(Math.random() * 2 - 1).toFixed(2)); last = null; buildKnobs(); showEffect(); restart(); });
+
+    // SCARA arm, top view. Base at (0,0) in metres, y forward.
+    const arm = document.getElementById('arm'), ac = arm.getContext('2d');
+    const L1 = 0.34, L2 = 0.30;
+    const W = arm.width, H = arm.height, S = 720, BX = W / 2, BY = H - 20;
+    const toPx = p => [BX + p[0] * S, BY - p[1] * S];
+    function ik(p) {
+      const d = Math.min(L1 + L2 - 1e-4, Math.hypot(p[0], p[1]));
+      const c2 = (d * d - L1 * L1 - L2 * L2) / (2 * L1 * L2), q2 = Math.acos(Math.max(-1, Math.min(1, c2)));
+      const q1 = Math.atan2(p[1], p[0]) - Math.atan2(L2 * Math.sin(q2), L1 + L2 * Math.cos(q2));
+      return [q1, q2];
+    }
+    let path = [], t = 0, trail = [];
+    function restart() { path = pathWorld(factors()); t = 0; trail = []; }
+    function frame() {
+      ac.clearRect(0, 0, W, H);
+      // workspace
+      ac.beginPath(); ac.arc(BX, BY, (L1 + L2) * S, Math.PI, 2 * Math.PI); ac.strokeStyle = '#e1ddf0'; ac.lineWidth = 1; ac.setLineDash([4, 6]); ac.stroke(); ac.setLineDash([]);
+      // target path (faint)
+      ac.beginPath(); path.forEach((p, i) => { const q = toPx(p); i ? ac.lineTo(q[0], q[1]) : ac.moveTo(q[0], q[1]); }); ac.closePath();
+      ac.strokeStyle = 'rgba(90,72,200,.18)'; ac.lineWidth = 6; ac.stroke();
+      // pen trail
+      const k = Math.floor(t) % path.length;
+      if (k === 0 && t > 1) trail = [];
+      trail.push(path[k]);
+      ac.beginPath(); trail.forEach((p, i) => { const q = toPx(p); i ? ac.lineTo(q[0], q[1]) : ac.moveTo(q[0], q[1]); });
+      ac.strokeStyle = '#5a48c8'; ac.lineWidth = 3; ac.lineJoin = 'round'; ac.stroke();
+      // arm
+      const [q1, q2] = ik(path[k]);
+      const e = [L1 * Math.cos(q1), L1 * Math.sin(q1)], tip = [e[0] + L2 * Math.cos(q1 + q2), e[1] + L2 * Math.sin(q1 + q2)];
+      const P0 = toPx([0, 0]), P1 = toPx(e), P2 = toPx(tip);
+      ac.lineCap = 'round';
+      ac.strokeStyle = '#3b3754'; ac.lineWidth = 16; ac.beginPath(); ac.moveTo(P0[0], P0[1]); ac.lineTo(P1[0], P1[1]); ac.stroke();
+      ac.strokeStyle = '#6f6990'; ac.lineWidth = 12; ac.beginPath(); ac.moveTo(P1[0], P1[1]); ac.lineTo(P2[0], P2[1]); ac.stroke();
+      [[P0, 13, '#1c1b24'], [P1, 9, '#1c1b24'], [P2, 6, '#5a48c8']].forEach(([p, r, c]) => { ac.beginPath(); ac.arc(p[0], p[1], r, 0, 2 * Math.PI); ac.fillStyle = c; ac.fill(); });
+      // readout
+      const f = factors();
+      ac.fillStyle = '#6b6880'; ac.font = '13px system-ui, sans-serif'; ac.textAlign = 'left';
+      ac.fillText('Shape: ' + FACT[4].fmt(FACT[4].map(f[4])) + '   size: ' + FACT[2].fmt(FACT[2].map(f[2])) + '   rotation: ' + FACT[3].fmt(FACT[3].map(f[3])), 14, 22);
+      ac.fillText('Joint angles: ' + (q1 * 180 / Math.PI).toFixed(0) + '°, ' + (q2 * 180 / Math.PI).toFixed(0) + '°', 14, 42);
+      t += 1.2;
+      requestAnimationFrame(frame);
+    }
+    buildKnobs(); showEffect(); restart(); requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>

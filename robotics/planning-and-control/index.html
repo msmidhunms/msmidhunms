@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planning and Control in One Network | Midhun</title>
+  <meta name="description" content="Inspired by how people plan and control movement, these convolutional and CNN-LSTM variational autoencoders combine robot task planning and motor control in one generative network.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .quote { border-left:3px solid var(--accent); padding:.2rem 0 .2rem 1rem; margin:1.2rem 0; font-size:1.05rem; color:#3b3754; }
+    .senses { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:.8rem; margin:1rem 0; }
+    .senses div { border:1px solid var(--border); border-radius:12px; padding:.9rem 1rem; background:var(--surface); }
+    .senses h3 { margin:0 0 .35rem; font-size:1rem; }
+    .senses p { margin:0; font-size:.92rem; }
+    .demo { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:1rem; margin-top:1rem; }
+    .demo canvas { width:100%; height:auto; display:block; border-radius:10px; background:#f7f6fc; }
+    .demo .caption { margin:.7rem 0 0; padding:.7rem .9rem; border-radius:10px; background:#f1eefc; font-size:.95rem; }
+    .demo .legend { display:flex; gap:1rem; flex-wrap:wrap; font-size:.85rem; color:var(--muted); margin-top:.5rem; }
+    .demo .legend i { display:inline-block; width:18px; height:3px; margin-right:.35rem; vertical-align:middle; }
+    .links { display:grid; gap:.7rem; margin-top:1rem; }
+    .links a.item { display:block; border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; background:var(--surface); text-decoration:none; color:inherit; }
+    .links a.item:hover { border-color:var(--accent); }
+    .links .k { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .links strong { color:var(--accent); }
+    .lanes { display:grid; gap:.6rem; margin-top:.8rem; }
+    .lane { display:grid; grid-template-columns: 7rem repeat(6, minmax(0,1fr)); gap:.4rem; align-items:stretch; }
+    .lane .who { font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; align-self:center; }
+    .lane button { border:1px solid var(--border); background:var(--surface); border-radius:10px; padding:.5rem .45rem; font:inherit; font-size:.82rem; line-height:1.25; cursor:pointer; text-align:left; color:#3b3754; min-height:3.6rem; }
+    .lane button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .lane.robot button.on { background:#2f6f8f; border-color:#2f6f8f; }
+    .stage-detail { display:grid; grid-template-columns: 1fr 1fr; gap:.8rem; margin-top:.8rem; }
+    .stage-detail div { border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; background:var(--surface); }
+    .stage-detail .k { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.25rem; }
+    .stage-detail p { margin:0; font-size:.93rem; }
+    @media (max-width: 760px) { .lane { grid-template-columns: repeat(3, minmax(0,1fr)); } .lane .who { grid-column: 1 / -1; } .stage-detail { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#motivation">Motivation</a></li>
+        <li><a href="#compare">Brain vs robot</a></li>
+        <li><a href="#loop">Plan and control</a></li>
+        <li><a href="#failure">When control fails</a></li>
+        <li><a href="#approach">The approach</a></li>
+        <li><a href="#read">Read more</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Generative models</div>
+      <h1>Planning and control in <em>one network</em></h1>
+      <p class="lead">People plan a task and control their muscles through one connected brain. This work brings the same idea to robots: a single generative network that turns a task into the joint motions that carry it out.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">CNN-VAE</span><span class="tag">CNN-LSTM VAE</span><span class="tag">Proprioception</span><span class="tag">Bio-inspired</span><span class="tag">Interactive demo</span></div>
+    </header>
+
+    <section class="block" id="motivation">
+      <div class="eyebrow">01 · Motivation</div>
+      <h2>A child's <em>first steps</em></h2>
+      <p class="quote">A child masters walking within about two years. Touch, the sense of its own body and what it sees all feed back into the brain, which blends them into one picture and turns that picture into movement.</p>
+      <p>The child also does not start from nothing. Evolution gives it built-in biases, prior knowledge that makes walking quick to learn. This mix of sensory fusion and inborn understanding is the inspiration for building learning networks for robots.</p>
+      <p>Adults go further. People can learn many tasks, including very complicated ones, and learn them quickly. Behind every task is a close partnership between planning and motor control.</p>
+      <div class="senses">
+        <div><h3>Sight</h3><p>The retina collects light, and the visual cortex at the back of the brain processes it before passing it on.</p></div>
+        <div><h3>Proprioception, the sixth sense</h3><p>Receptors in muscles, tendons and joints report where each body part is and how it moves, without needing to look.</p></div>
+        <div><h3>A map of the body</h3><p>The parietal lobe gathers these signals and builds a spatial map of the body in relation to its surroundings. The cerebellum uses them for fine motor control.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="compare">
+      <div class="eyebrow">02 · Brain vs robot</div>
+      <h2>How a person and a robot <em>process</em> what they sense</h2>
+      <p>Pick a pathway, then click any stage to compare what happens in the human brain with its counterpart in the robot.</p>
+      <div class="toggle" id="path-mode"></div>
+      <div class="lanes">
+        <div class="lane human" id="lane-h"></div>
+        <div class="lane robot" id="lane-r"></div>
+      </div>
+      <div class="stage-detail">
+        <div><span class="k" id="d-hk">Human brain</span><p id="d-h"></p></div>
+        <div><span class="k" id="d-rk">Robot</span><p id="d-r"></p></div>
+      </div>
+      <p class="note" id="path-note"></p>
+    </section>
+
+    <section class="block" id="loop">
+      <div class="eyebrow">03 · Plan and control</div>
+      <h2>How people do a task, and the <em>robot equivalent</em></h2>
+      <p>The prefrontal cortex plans: it frames the goal and pictures the outcome. The motor cortex turns that plan into commands for muscles and joints. The cerebellum fine-tunes the movement as it happens. Vision and proprioception keep feeding back, so the plan adjusts while it runs. These regions sit in different places but are wired together, so planning and control work as one system.</p>
+      <p>The bottom row shows the robot version. The robot is not given a separate sense of its own body: the model learns one internally, from the joint data it is trained on. Hover or click a block to see how each part maps across.</p>
+      <div class="arch" id="loop-arch"><div class="arch-tabs" role="tablist" aria-label="View"></div><div class="arch-body"><div class="arch-stage"></div><aside class="arch-info" aria-live="polite"></aside></div></div>
+    </section>
+
+    <section class="block" id="failure">
+      <div class="eyebrow">04 · When control fails</div>
+      <h2>A good plan is <em>not enough</em></h2>
+      <p>When motor control falters, movement breaks down even if the plan is fine. Alcohol slows and blurs the brain's motor commands, which shows up as an unsteady gait and poor balance. In Parkinson's disease, the loss of dopamine-producing neurons disrupts the signals that regulate movement, causing tremor, slowed movement and difficulty starting or finishing an action. In both cases the person may still know what to do, but the task is not completed, because the control fails.</p>
+      <div class="demo">
+        <div class="toggle" id="ctrl-mode"></div>
+        <canvas id="ctrl" width="900" height="380" aria-label="The same plan executed with different motor control"></canvas>
+        <div class="legend"><span><i style="background:#c9c4dd"></i>The plan (identical in every case)</span><span><i style="background:#5a48c8"></i>What the arm actually draws</span></div>
+        <p class="caption" id="ctrl-caption"></p>
+      </div>
+      <p class="note">This is a simple illustration, not a medical model. The plan never changes; only the quality of control does.</p>
+    </section>
+
+    <section class="block" id="approach">
+      <div class="eyebrow">05 · The approach</div>
+      <h2>One generative network that <em>plans and moves</em></h2>
+      <p>If planning and control are joined in one connected system, as in the brain, the result can be both well planned and finely controlled. In a structured, static environment, where nothing moves unexpectedly, the body's own sense is enough. The network never receives proprioception as a separate input. It learns it internally: by training on joint commands, it builds its own sense of where the arm is and how it moves.</p>
+      <p>A task label stands for the goal, the way an intention does. Two conditional variational autoencoders were built, and both work in two phases:</p>
+      <ul>
+        <li><strong>Training.</strong> A recorded joint-command trajectory goes into the encoder, which compresses it into a latent code z. The decoder takes z and the task label and rebuilds the trajectory. The VAE loss, reconstruction error plus a KL term that keeps the latent space smooth, drives learning.</li>
+        <li><strong>Inference.</strong> The encoder is no longer needed. A latent vector is sampled from the learned space, and the decoder turns it, with the task label, into new joint commands for the robot.</li>
+      </ul>
+      <p>The two models differ in their layers:</p>
+      <ul>
+        <li><strong>Conditional CNN-VAE.</strong> The encoder and decoder are built from 1D convolution layers only. They read and write local patterns in the motion, like short movement primitives.</li>
+        <li><strong>CNN-LSTM VAE.</strong> The encoder has n convolution layers followed by m LSTM layers. The decoder mirrors it, with LSTM layers followed by convolution layers. The LSTM layers add memory, so each part of the motion is shaped by what came before.</li>
+      </ul>
+      <p>Choose a model and a phase below. Hover a block for details.</p>
+      <div class="arch" id="model-arch"><div class="arch-tabs" role="tablist" aria-label="Model"></div><div class="arch-body"><div class="arch-stage"></div><aside class="arch-info" aria-live="polite"></aside></div></div>
+    </section>
+
+    <section class="block" id="read">
+      <div class="eyebrow">06 · Read more</div>
+      <h2>Thesis and <em>paper</em></h2>
+      <div class="links">
+        <a class="item" href="https://shodhganga.inflibnet.ac.in/handle/10603/669301" target="_blank" rel="noopener"><span class="k">PhD thesis · CUSAT, 2025</span><strong>Robot trajectory amenagement under structured static environment using data driven generative latent variable models ↗</strong></a>
+        <a class="item" href="../../assets/thesis/chapter-5.pdf" target="_blank" rel="noopener"><span class="k">Thesis chapter 5 (PDF)</span><strong>Convolutional models for offline manipulator trajectory planning ↗</strong></a>
+        <a class="item" href="../../assets/thesis/chapter-6.pdf" target="_blank" rel="noopener"><span class="k">Thesis chapter 6 (PDF)</span><strong>CNN-LSTM VAE and Transformer models for robot trajectories ↗</strong></a>
+        <a class="item" href="https://ijisae.org/index.php/IJISAE/article/view/6002" target="_blank" rel="noopener"><span class="k">Journal paper · IJISAE 12(3), 2024</span><strong>Consumption and Realization of Conditional Convolutional Variational Autoencoder for Robot Trajectory Learning ↗</strong></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script src="../../assets/thesis.js"></script>
+  <script>
+  (function () {
+    // ---------- human vs robot loop ----------
+    Arch.mount(document.querySelector('#loop-arch'), {
+      id: 'loop', width: 1000, height: 470, label: 'Human planning and control loop with its robot equivalent',
+      columns: [ {x:20,w:220,label:'Sense'}, {x:270,w:210,label:'Plan'}, {x:510,w:220,label:'Command and fine-tune'}, {x:760,w:220,label:'Act'} ],
+      nodes: [
+        {id:'h-sense', x:30, y:40, w:200, h:130, title:'Vision + proprioception', sub:'human', lines:['Retina → visual cortex','Joint receptors → thalamus','→ parietal lobe, cerebellum'], info:{body:'Vision and the body’s own position sense, fused into a spatial map of the body in its surroundings.'}},
+        {id:'h-plan', x:280, y:40, w:190, h:130, title:'Prefrontal cortex', sub:'human', lines:['Frames the goal','Pictures the outcome'], info:{body:'Strategic planning, creativity and spatial reasoning.'}},
+        {id:'h-cmd', x:520, y:40, w:200, h:130, title:'Motor cortex + cerebellum', sub:'human', lines:['Plan → motor commands','Real-time fine-tuning'], info:{body:'The motor cortex turns the plan into commands. The cerebellum adjusts muscle activity as the movement happens.'}},
+        {id:'h-act', x:770, y:40, w:200, h:130, title:'Muscles and joints', sub:'human', kind:'core', info:{body:'The movement itself, which produces new sensory feedback.'}},
+        {id:'r-sense', x:30, y:270, w:200, h:130, title:'Task label', sub:'robot', lines:['The intention','A high-level vector'], info:{body:'The task to perform, given as a high-level vector, like an intention.'}},
+        {id:'r-plan', x:280, y:270, w:190, h:130, title:'Latent space z', sub:'robot', lines:['Plan for the task','Learned sense of the arm'], info:{body:'The latent space holds the plan, and with it the model\u2019s internal, learned sense of the arm: its proprioception.'}},
+        {id:'r-cmd', x:520, y:270, w:200, h:130, title:'Decoder', sub:'robot', lines:['z → joint trajectory','Smooth, step by step'], info:{body:'The decoder plays the motor cortex and cerebellum: it turns the plan into precise joint commands.'}},
+        {id:'r-act', x:770, y:270, w:200, h:130, title:'Robot joints', sub:'robot', kind:'core', info:{body:'The arm executes the trajectory. Its joint encoders close the loop.'}}
+      ],
+      edges: [
+        {from:'h-sense', to:'h-plan', label:'', lt:0.5},
+        {from:'h-plan', to:'h-cmd', label:'plan', lt:0.5},
+        {from:'h-cmd', to:'h-act', label:'commands', lt:0.5},
+        {from:'h-act', to:'h-sense', d:'M870,40 C870,10 130,10 130,40', label:'feedback', lt:0.5},
+        {from:'r-sense', to:'r-plan', label:'task', lt:0.5},
+        {from:'r-plan', to:'r-cmd', label:'z', lt:0.5},
+        {from:'r-cmd', to:'r-act', label:'joints', lt:0.5},
+        {from:'r-act', to:'r-plan', d:'M870,400 C870,445 375,445 375,400', label:'joint data, learned in training', lt:0.5}
+      ]
+    });
+
+    // ---------- same plan, different control ----------
+    const cv = document.getElementById('ctrl'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const L1 = 1.0, L2 = 0.85, S = 200, BX = 220, BY = H - 40;
+    const toPx = p => [BX + p[0] * S, BY - p[1] * S];
+    const NPT = 400;
+    const plan = Array.from({ length: NPT }, (_, k) => { // a figure-of-eight the arm should draw
+      const t = k / NPT * 2 * Math.PI; return [1.15 + 0.38 * Math.sin(t), 0.75 + 0.22 * Math.sin(2 * t)];
+    });
+    function ik(p) {
+      const d = Math.min(L1 + L2 - 1e-3, Math.hypot(p[0], p[1]));
+      const c2 = (d * d - L1 * L1 - L2 * L2) / (2 * L1 * L2), q2 = -Math.acos(Math.max(-1, Math.min(1, c2)));
+      return [Math.atan2(p[1], p[0]) - Math.atan2(L2 * Math.sin(q2), L1 + L2 * Math.cos(q2)), q2];
+    }
+    const fk = q => [L1 * Math.cos(q[0]) + L2 * Math.cos(q[0] + q[1]), L1 * Math.sin(q[0]) + L2 * Math.sin(q[0] + q[1])];
+    const MODES = {
+      healthy: { gain: 0.35, delay: 0, noise: 0, tremor: 0, speed: 1, text: 'Healthy control: the commands are timely and precise, so the arm follows the plan closely.' },
+      alcohol: { gain: 0.14, delay: 10, noise: 0.018, tremor: 0, speed: 1, text: 'Impaired timing and precision, as with alcohol: commands arrive late and blurred, so the arm overshoots and wanders, even though the plan is the same.' },
+      parkinson: { gain: 0.3, delay: 2, noise: 0.004, tremor: 0.035, speed: 0.45, text: 'Disrupted motor signals, as in Parkinson’s disease: tremor is added and the movement is slower, even though the plan is the same.' }
+    };
+    let mode = 'healthy', q = ik(plan[0]), qv = [0, 0], k = 0, hist = [], trail = [];
+    function reset() { q = ik(plan[0]); qv = [0, 0]; k = 0; hist = []; trail = []; }
+    function stepCtrl() {
+      const m = MODES[mode];
+      k = (k + m.speed) % NPT;
+      const target = ik(plan[Math.floor(k)]);
+      hist.push(target); if (hist.length > 60) hist.shift();
+      const tq = hist[Math.max(0, hist.length - 1 - m.delay)];
+      const t = performance.now() / 1000;
+      for (let j = 0; j < 2; j++) {
+        const err = tq[j] - q[j];
+        qv[j] = qv[j] * (m.delay > 5 ? 0.8 : 0.5) + m.gain * err + (Math.random() - 0.5) * m.noise;
+        q[j] += qv[j] + m.tremor * Math.sin(2 * Math.PI * 5.5 * t + j) * 0.12;
+      }
+      trail.push(fk(q)); if (trail.length > 520) trail.shift();
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.beginPath(); plan.forEach((p, i) => { const P = toPx(p); i ? ctx.lineTo(P[0], P[1]) : ctx.moveTo(P[0], P[1]); }); ctx.closePath();
+      ctx.strokeStyle = '#d6d2e8'; ctx.lineWidth = 8; ctx.lineJoin = 'round'; ctx.stroke();
+      ctx.beginPath(); trail.forEach((p, i) => { const P = toPx(p); i ? ctx.lineTo(P[0], P[1]) : ctx.moveTo(P[0], P[1]); });
+      ctx.strokeStyle = '#5a48c8'; ctx.lineWidth = 2.2; ctx.stroke();
+      const e = [L1 * Math.cos(q[0]), L1 * Math.sin(q[0])], tip = fk(q);
+      const P0 = toPx([0, 0]), P1 = toPx(e), P2 = toPx(tip);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#3b3754'; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(P0[0], P0[1]); ctx.lineTo(P1[0], P1[1]); ctx.stroke();
+      ctx.strokeStyle = '#6f6990'; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(P1[0], P1[1]); ctx.lineTo(P2[0], P2[1]); ctx.stroke();
+      [[P0, 12, '#1c1b24'], [P1, 8, '#1c1b24'], [P2, 6, '#5a48c8']].forEach(([p, r, c]) => { ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 2 * Math.PI); ctx.fillStyle = c; ctx.fill(); });
+    }
+    function loop() { stepCtrl(); stepCtrl(); draw(); requestAnimationFrame(loop); }
+    const cap = document.getElementById('ctrl-caption');
+    T.toggles(document.getElementById('ctrl-mode'), [{ label: 'Healthy control', value: 'healthy' }, { label: 'Impaired timing', value: 'alcohol' }, { label: 'Tremor and slowness', value: 'parkinson' }], function (v) { mode = v; cap.textContent = MODES[v].text; reset(); });
+    cap.textContent = MODES.healthy.text;
+    reset(); requestAnimationFrame(loop);
+
+    // ---------- the two models ----------
+    Arch.mount(document.querySelector('#model-arch'), {
+      id: 'mdl', width: 1000, height: 430, label: 'Conditional CNN-VAE and CNN-LSTM VAE, training and inference',
+      columns: [ {x:15,w:175,label:'Input'}, {x:215,w:225,label:'Encoder'}, {x:465,w:180,label:'Latent'}, {x:670,w:170,label:'Decoder'}, {x:860,w:130,label:'Output'} ],
+      modes: [
+        {id:'ct', label:'CNN-VAE · training', desc:'Training: a joint-command trajectory goes through 1D convolution layers to give μ and σ, and z is sampled from them. The decoder, also 1D convolutions, takes z and the task label and rebuilds the trajectory. The VAE loss compares the reconstruction with the input and adds a KL term.'},
+        {id:'ci', label:'CNN-VAE · inference', desc:'Inference: the encoder is not used. z is sampled from the learned latent space and the 1D-convolution decoder turns it, with the task label, into new joint commands.'},
+        {id:'lt', label:'CNN-LSTM VAE · training', desc:'Training: the encoder has n convolution layers followed by m LSTM layers. The decoder mirrors it, with LSTM layers then convolution layers, and takes z and the task label. The VAE loss trains both.'},
+        {id:'li', label:'CNN-LSTM VAE · inference', desc:'Inference: z is sampled from the learned latent space, and the LSTM and convolution decoder turns it, with the task label, into new joint commands.'} ],
+      nodes: [
+        {id:'jc', x:25, y:40, w:160, h:80, title:'Joint commands', sub:'recorded trajectory', modes:['ct','lt'], info:{body:'A recorded trajectory of joint commands: 7 joints over 128 steps. Used only in training.'}},
+        {id:'task', x:25, y:300, w:160, h:80, title:'Task label', sub:'the intention', info:{body:'Which task to perform. It is an input to the decoder in both training and inference.'}},
+        {id:'econv', x:225, y:40, w:205, h:80, title:'1D conv × n', sub:'local motion patterns', modes:['ct','lt'], info:{body:'Convolution layers along time read short movement patterns.'}},
+        {id:'elstm', x:225, y:160, w:205, h:70, title:'LSTM × m', sub:'memory over time', modes:['lt'], info:{body:'In the CNN-LSTM VAE, LSTM layers follow the convolutions and carry information along the sequence.'}},
+        {id:'z', x:475, y:120, w:160, h:100, title:'z', sub:'latent code', kind:'core', info:{body:'Training: z = μ + σ·ε from the encoder. Inference: z is sampled from the learned space.'}},
+        {id:'prior', x:475, y:300, w:160, h:80, title:'Sample z', sub:'from N(0, I)', modes:['ci','li'], info:{body:'At inference, a latent vector is drawn from the prior. Different samples give different trajectories for the same task.'}},
+        {id:'dlstm', x:680, y:40, w:150, h:70, title:'LSTM × m', sub:'memory over time', modes:['lt','li'], info:{body:'In the CNN-LSTM VAE, the decoder starts with LSTM layers.'}},
+        {id:'dconv', x:680, y:150, w:150, h:80, title:'1D conv × n', sub:'transposed + conv', info:{body:'Convolution layers rebuild the full trajectory. A final convolution reduces artefacts.'}},
+        {id:'recon', x:870, y:40, w:115, h:80, title:'Reconstruction', sub:'training', modes:['ct','lt'], info:{body:'The rebuilt trajectory, compared with the input.'}},
+        {id:'loss', x:870, y:160, w:115, h:80, title:'VAE loss', sub:'recon + KL', modes:['ct','lt'], kind:'core', info:{body:'Reconstruction error between input and output, plus a KL term that keeps the latent space smooth and easy to sample.'}},
+        {id:'gen', x:870, y:300, w:115, h:80, title:'Joint commands', sub:'new, to the robot', modes:['ci','li'], kind:'core', info:{body:'A new trajectory for the requested task, sent to the robot.'}}
+      ],
+      edges: [
+        {from:'jc', to:'econv', modes:['ct','lt'], label:'', lt:0.5},
+        {from:'econv', to:'z', modes:['ct'], label:'μ, σ', lt:0.5},
+        {from:'econv', to:'elstm', modes:['lt'], label:'', lt:0.5},
+        {from:'elstm', to:'z', modes:['lt'], label:'μ, σ', lt:0.5},
+        {from:'prior', to:'z', modes:['ci','li'], label:'sample', lt:0.5},
+        {from:'z', to:'dconv', modes:['ct','ci'], label:'z', lt:0.5},
+        {from:'z', to:'dlstm', modes:['lt','li'], label:'z', lt:0.5},
+        {from:'dlstm', to:'dconv', modes:['lt','li'], label:'', lt:0.5},
+        {from:'task', to:'dconv', modes:['ct','ci'], d:'M185,360 C420,425 720,410 755,230', label:'task label', lt:0.5},
+        {from:'task', to:'dlstm', modes:['lt','li'], d:'M185,370 C400,428 860,428 830,75', label:'task label', lt:0.5},
+        {from:'dconv', to:'recon', modes:['ct','lt'], label:'', lt:0.5},
+        {from:'recon', to:'loss', modes:['ct','lt'], label:'', lt:0.5},
+        {from:'jc', to:'loss', modes:['ct','lt'], d:'M105,40 C105,8 960,8 985,170', label:'compare with input', lt:0.5},
+        {from:'dconv', to:'gen', modes:['ci','li'], label:'', lt:0.5}
+      ]
+    });
+
+    // ---------- brain vs robot pathways ----------
+    const PATHS = {
+      body: { note: 'This work uses this pathway only. In a structured, static environment, the sense of the body is enough.', stages: [
+        ['Sense', 'Proprioceptors in muscles, tendons and joints register stretch, tension and joint angle.', 'Joint commands: the angles of the 7 joints at every step of the motion.'],
+        ['Carry', 'Signals travel up the spinal cord. Some reach the thalamus, others go straight to the cerebellum.', 'The joint values are arranged as a sequence over time, ready for the network.'],
+        ['Body map', 'The somatosensory and posterior parietal cortex build a spatial map of where each body part is.', 'The encoder compresses the motion into the latent space. This is the model’s learned, internal sense of the arm: its proprioception.'],
+        ['Plan', 'The prefrontal cortex frames the goal and pictures the outcome.', 'The task label and the latent code together form the plan.'],
+        ['Command', 'The motor cortex turns the plan into commands for muscles and joints.', 'The decoder turns z and the task label into joint commands.'],
+        ['Fine-tune', 'The cerebellum adjusts muscle activity in real time for smooth, precise movement.', 'The final layers smooth the output. In training, the loss corrects the model until its motions are precise.'] ] },
+      sight: { note: 'Shown for comparison. The robot in this work does not use vision; a camera pathway is the natural next step for less structured environments.', stages: [
+        ['Sense', 'Photoreceptors in the retina turn light into nerve signals.', 'A camera sensor turns light into a grid of pixel values.'],
+        ['Carry', 'The optic nerve carries the signals to the thalamus.', 'The image is passed to the network as an array of numbers.'],
+        ['Edges', 'The primary visual cortex, at the back of the brain, picks out edges and orientations.', 'The first convolution layers respond to edges and simple patterns.'],
+        ['Objects', 'Higher visual areas combine edges into shapes and recognise objects and where they are.', 'Deeper layers combine patterns into shapes and objects.'],
+        ['Act on it', 'The parietal lobe uses what is seen to guide movement, and the prefrontal cortex plans with it.', 'The visual features feed the planner, alongside the task.'],
+        ['Correct', 'Vision keeps checking the movement and corrects it as it happens.', 'Visual feedback corrects the motion while it runs (visual servoing).'] ] }
+    };
+    let path = 'body', stage = 2;
+    const laneH = document.getElementById('lane-h'), laneR = document.getElementById('lane-r');
+    function renderPath() {
+      const P = PATHS[path];
+      laneH.innerHTML = '<span class="who">Human brain</span>' + P.stages.map((st, i) => '<button type="button" data-i="' + i + '">' + (i + 1) + '. ' + st[0] + '</button>').join('');
+      laneR.innerHTML = '<span class="who">Robot</span>' + P.stages.map((st, i) => '<button type="button" data-i="' + i + '">' + (i + 1) + '. ' + st[0] + '</button>').join('');
+      [laneH, laneR].forEach(l => l.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { stage = +b.dataset.i; pick(); })));
+      document.getElementById('path-note').textContent = P.note;
+      pick();
+    }
+    function pick() {
+      const st = PATHS[path].stages[stage];
+      [laneH, laneR].forEach(l => l.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.i === stage)));
+      document.getElementById('d-hk').textContent = 'Human brain · ' + st[0];
+      document.getElementById('d-rk').textContent = 'Robot · ' + st[0];
+      document.getElementById('d-h').textContent = st[1];
+      document.getElementById('d-r').textContent = st[2];
+    }
+    T.toggles(document.getElementById('path-mode'), [{ label: 'Sensing the body (proprioception)', value: 'body' }, { label: 'Seeing (vision)', value: 'sight' }], v => { path = v; renderPath(); });
+    renderPath();
+  })();
+  </script>
+</body>
+</html>

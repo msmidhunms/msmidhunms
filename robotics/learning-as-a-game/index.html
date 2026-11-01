@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Tasks as a Game | Midhun</title>
+  <meta name="description" content="An implicit generative model for robot trajectories: a generator and a discriminator play a two-player game until they reach a Nash equilibrium, and the generator has learned the task. Interactive explainer.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .compare { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin:1rem 0; }
+    .compare div { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:1rem 1.1rem; }
+    .compare h3 { margin:0 0 .4rem; font-size:1rem; }
+    .compare p { margin:0; font-size:.94rem; }
+    .compare .k { display:block; font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+    .players { display:grid; grid-template-columns: repeat(3, 1fr); gap:.8rem; margin:1rem 0; }
+    .players div { border:1px solid var(--border); border-radius:12px; padding:.9rem 1rem; background:var(--surface); }
+    .players h3 { margin:0 0 .3rem; font-size:1rem; }
+    .players p { margin:0; font-size:.92rem; }
+    .players .role { color:var(--accent); font-family:var(--mono); font-size:.8rem; }
+    .game { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:1rem; margin-top:1rem; }
+    .game canvas { width:100%; height:auto; display:block; border-radius:10px; background:#f7f6fc; }
+    .game .bar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin:.2rem 0 .8rem; }
+    .game button { border:1px solid #d6d0ec; background:#fff; border-radius:999px; padding:.35rem .9rem; cursor:pointer; font:inherit; color:#3b3754; }
+    .game button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .stats { display:grid; grid-template-columns: repeat(4, 1fr); gap:.6rem; margin-top:.8rem; }
+    .stats div { border:1px solid var(--border); border-radius:10px; padding:.5rem .7rem; }
+    .stats .k { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .stats strong { font-size:1.05rem; font-variant-numeric: tabular-nums; }
+    .phase { margin:.8rem 0 0; padding:.7rem .9rem; border-radius:10px; background:#f1eefc; font-size:.95rem; }
+    .legend { display:flex; gap:1rem; flex-wrap:wrap; font-size:.85rem; color:var(--muted); margin-top:.5rem; }
+    .legend i { display:inline-block; width:14px; height:10px; border-radius:3px; margin-right:.35rem; vertical-align:middle; }
+    @media (max-width: 760px) { .compare, .players { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#idea">The idea</a></li>
+        <li><a href="#game">The game</a></li>
+        <li><a href="#robot">For a robot</a></li>
+        <li><a href="#build">How it's built</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Generative models</div>
+      <h1>Learning a task as a <em>game</em></h1>
+      <p class="lead">An implicit generative model learns the inner structure of a robot task from demonstrations alone. Two networks compete until neither can improve, a Nash equilibrium, and at that point the generator produces new, valid trajectories for the task.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">GAN</span><span class="tag">Implicit model</span><span class="tag">Game theory</span><span class="tag">Nash equilibrium</span><span class="tag">Interactive demo</span></div>
+    </header>
+
+    <section class="block" id="idea">
+      <div class="eyebrow">01 · The idea</div>
+      <h2>Describe the task, or <em>learn to produce it</em></h2>
+      <p>Programming a robot task by hand takes an expert, and a task with many sub-goals is hard to write down. Reinforcement learning struggles too: the space of action sequences grows exponentially with the number of steps. There is another way to learn from examples.</p>
+      <div class="compare">
+        <div><span class="k">Explicit model</span><h3>Write down the distribution</h3><p>Define a probability for every possible trajectory, then fit it. Every assumption about the task has to be stated, and a complex task needs a complex formula.</p></div>
+        <div><span class="k">Implicit model</span><h3>Learn to sample from it</h3><p>Never write the distribution down. Train a generator that turns random numbers into trajectories that look like the demonstrations. The task's structure is learned inside the network.</p></div>
+      </div>
+      <p>A Generative Adversarial Network (GAN) is an implicit model. It needs only recorded trajectories, with no reward, no labels and no task rules.</p>
+    </section>
+
+    <section class="block" id="game">
+      <div class="eyebrow">02 · The game</div>
+      <h2>A student, a judge and a <em>teacher</em></h2>
+      <div class="players">
+        <div><span class="role">Teacher · dataset</span><h3>Demonstrations</h3><p>Recorded robot trajectories of the task. The teacher never changes.</p></div>
+        <div><span class="role">Player 1 · generator G</span><h3>Student</h3><p>Turns random noise z into a trajectory and tries to make it pass as a demonstration.</p></div>
+        <div><span class="role">Player 2 · discriminator D</span><h3>Judge</h3><p>Sees a trajectory and says how likely it is to be real. It learns from the student's mistakes.</p></div>
+      </div>
+      <p>One player's gain is the other's loss, a two-player zero-sum game:</p>
+      <div class="eq">min<sub>G</sub> max<sub>D</sub>  E<sub>x ~ data</sub>[ log D(x) ] + E<sub>z ~ p(z)</sub>[ log(1 − D(G(z))) ]</div>
+      <p>The game ends at a <strong>Nash equilibrium</strong>: the student's samples follow the same distribution as the demonstrations, and the judge can do no better than guess, D(x) = ½ everywhere.</p>
+
+      <div class="game" aria-label="Interactive GAN training demo">
+        <div class="bar">
+          <button type="button" class="primary" id="play">▶ Play</button>
+          <button type="button" id="step">Step ×50</button>
+          <button type="button" id="task">Change the task</button>
+          <button type="button" id="reset">Reset</button>
+        </div>
+        <canvas id="plot" width="900" height="360"></canvas>
+        <div class="legend">
+          <span><i style="background:rgba(47,143,111,.35)"></i>Demonstrations (teacher)</span>
+          <span><i style="background:#5a48c8"></i>Student's samples (G)</span>
+          <span><i style="background:#d9822b"></i>Judge's belief "real" D(x)</span>
+          <span><i style="background:#c9c4dd"></i>Equilibrium, D = ½</span>
+        </div>
+        <div class="stats">
+          <div><span class="k">Training step</span><strong id="s-step">0</strong></div>
+          <div><span class="k">Judge accuracy</span><strong id="s-acc">–</strong></div>
+          <div><span class="k">Judge's value</span><strong id="s-val">–</strong></div>
+          <div><span class="k">Gap to equilibrium</span><strong id="s-gap">–</strong></div>
+        </div>
+        <p class="phase" id="phase">Press Play. The student starts far from the demonstrations, so the judge can tell them apart easily.</p>
+      </div>
+      <p class="note">This is a real, if tiny, GAN running in your browser: a one-dimensional generator and a quadratic judge, trained with the same alternating gradient steps. The robot version plays the same game over whole trajectories.</p>
+    </section>
+
+    <section class="block" id="robot">
+      <div class="eyebrow">03 · For a robot</div>
+      <h2>What the student learns about the <em>task</em></h2>
+      <p>For a robot, each sample is a whole trajectory: 512 time steps of 7 joint angles plus the gripper, produced in one shot from a 100-number noise vector. After training, the noise space has become a map of the task. Different points give different valid ways of doing it, with a different stroke order, direction or length, and moving between points changes the motion smoothly. The results are in the paper linked below.</p>
+      <figure class="fig setup">
+        <svg viewBox="0 0 1000 300" role="img" aria-label="Setup: robot demonstrations recorded in ROS simulation become a trajectory dataset, the GAN learns from it, and the generator produces new trajectories that the robot executes" style="width:100%;height:auto;display:block;background:#f7f6fc;border-radius:12px;">
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a84b3"/></marker></defs>
+          <g font-family="system-ui, sans-serif" text-anchor="middle">
+            <!-- 1 demonstrations -->
+            <rect x="20" y="40" width="200" height="190" rx="14" fill="#fff" stroke="#e1ddf0"/>
+            <line x1="60" y1="200" x2="95" y2="140" stroke="#3b3754" stroke-width="12" stroke-linecap="round"/>
+            <line x1="95" y1="140" x2="150" y2="125" stroke="#6f6990" stroke-width="9" stroke-linecap="round"/>
+            <circle cx="60" cy="200" r="9" fill="#1c1b24"/><circle cx="95" cy="140" r="6" fill="#1c1b24"/>
+            <rect x="140" y="150" width="62" height="56" rx="4" fill="#fff" stroke="#c9c4dd"/>
+            <path d="M150,195 C150,165 192,165 192,180 C192,200 160,200 165,175" fill="none" stroke="#5a48c8" stroke-width="2.5"/>
+            <text x="120" y="70" font-size="15" fill="#1c1b24" font-weight="600">Demonstrations</text>
+            <text x="120" y="90" font-size="12" fill="#6b6880">robot draws, ROS simulation</text>
+            <!-- 2 dataset -->
+            <rect x="270" y="40" width="190" height="190" rx="14" fill="#fff" stroke="#e1ddf0"/>
+            <text x="365" y="70" font-size="15" fill="#1c1b24" font-weight="600">Trajectory dataset</text>
+            <text x="365" y="90" font-size="12" fill="#6b6880">512 steps × 7 joints + gripper</text>
+            <g fill="none" stroke-width="2">
+              <path d="M290,120 C320,105 340,135 370,118 S420,110 440,124" stroke="#5a48c8"/>
+              <path d="M290,145 C315,160 345,130 375,148 S420,155 440,140" stroke="#2f6f8f"/>
+              <path d="M290,170 C320,160 340,185 370,168 S415,175 440,165" stroke="#d9822b"/>
+              <path d="M290,195 C318,205 342,185 372,198 S418,190 440,202" stroke="#2f8f6f"/>
+            </g>
+            <!-- 3 GAN -->
+            <rect x="510" y="40" width="200" height="190" rx="14" fill="#fff" stroke="#5a48c8"/>
+            <text x="610" y="70" font-size="15" fill="#1c1b24" font-weight="600">GAN learns the task</text>
+            <rect x="535" y="95" width="70" height="50" rx="8" fill="#efecfb" stroke="#5a48c8"/><text x="570" y="125" font-size="13" fill="#3b3754">G</text>
+            <rect x="615" y="95" width="70" height="50" rx="8" fill="#fbf1e6" stroke="#d9822b"/><text x="650" y="125" font-size="13" fill="#3b3754">D</text>
+            <path d="M605,120 L615,120" stroke="#8a84b3" stroke-width="2" marker-end="url(#ar)"/>
+            <text x="610" y="175" font-size="12" fill="#6b6880">student vs judge</text>
+            <text x="610" y="193" font-size="12" fill="#6b6880">until Nash equilibrium</text>
+            <!-- 4 new motions -->
+            <rect x="760" y="40" width="220" height="190" rx="14" fill="#fff" stroke="#e1ddf0"/>
+            <text x="870" y="70" font-size="15" fill="#1c1b24" font-weight="600">New motions</text>
+            <text x="870" y="90" font-size="12" fill="#6b6880">noise → generator → robot</text>
+            <g fill="none" stroke="#5a48c8" stroke-width="2.2">
+              <circle cx="815" cy="150" r="24"/>
+              <path d="M860,175 L880,125 L900,175 Z"/>
+              <rect x="920" y="128" width="40" height="44" rx="3"/>
+            </g>
+            <text x="870" y="210" font-size="12" fill="#6b6880">a different sample each time</text>
+            <!-- arrows -->
+            <g stroke="#8a84b3" stroke-width="2.5" fill="none" marker-end="url(#ar)">
+              <path d="M222,135 L266,135"/><path d="M462,135 L506,135"/><path d="M712,135 L756,135"/>
+            </g>
+            <text x="500" y="275" font-size="13" fill="#6b6880">No rewards, labels or task rules: only recorded trajectories go in.</text>
+          </g>
+        </svg>
+        <figcaption>The setup: demonstrations recorded in simulation become a dataset, the GAN learns from it, and the trained generator produces new motions for the robot.</figcaption>
+      </figure>
+      <h3>Finding the closest demonstration</h3>
+      <p>An implicit model has no encoder, so it cannot say directly which noise vector produces a given trajectory. Two methods recover it: look up the nearest real trajectory with k-nearest neighbours, or search the noise space with an optimiser until the output matches a target. The second is covered in <a href="../../aiml/searching-without-gradients/">Searching without gradients</a>.</p>
+    </section>
+
+    <section class="block" id="build">
+      <div class="eyebrow">04 · How it's built</div>
+      <h2>Convolutional <em>generator and judge</em></h2>
+      <p>Both networks are 1D convolutional, so they pick up local motion patterns along the time axis. Switch between training, where both networks learn together, and generating new motions with the trained generator. Hover a block for details.</p>
+      <div class="arch" id="gan-arch"><div class="arch-tabs" role="tablist" aria-label="View"></div><div class="arch-body"><div class="arch-stage"></div><aside class="arch-info" aria-live="polite"></aside></div></div>
+      <p class="note">Trained on eight drawing tasks, each with 46,000 to 100,000 trajectories generated in ROS simulation. Read more in <a href="../../assets/thesis/chapter-5.pdf" target="_blank" rel="noopener">thesis chapter 5 (PDF)</a>. Related publication: <a href="https://doi.org/10.1007/s41315-024-00353-y" target="_blank" rel="noopener">Example-Driven Trajectory Learner for Robots under Structured Static Environment</a>, International Journal of Intelligent Robotics and Applications, 2024.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script src="../../assets/thesis.js"></script>
+  <script>
+  (function () {
+    // ---------- tiny 1D GAN ----------
+    function randn() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+    const sig = x => 1 / (1 + Math.exp(-x));
+    const TASKS = [[1.5, 0.5], [-1.8, 0.7], [2.6, 0.35], [-0.4, 0.9]];
+    let ti = 0, MR, SR, mu, s, a, b, c, step, running = false, acc = null, val = null;
+    const B = 128, lrD = 0.05, lrG = 0.03;
+    function reset() { ti = 0; [MR, SR] = TASKS[0]; mu = -3; s = Math.log(1.3); a = b = c = 0; step = 0; acc = val = null; }
+    const D = x => sig(a * x * x + b * x + c);
+    function trainStep() {
+      for (let k = 0; k < 3; k++) {
+        let ga = 0, gb = 0, gc = 0, right = 0, v = 0;
+        for (let i = 0; i < B; i++) {
+          const xr = MR + SR * randn(), xf = mu + Math.exp(s) * randn(), dr = D(xr), df = D(xf);
+          ga += (1 - dr) * xr * xr - df * xf * xf; gb += (1 - dr) * xr - df * xf; gc += (1 - dr) - df;
+          right += (dr > 0.5) + (df < 0.5); v += Math.log(dr + 1e-9) + Math.log(1 - df + 1e-9);
+        }
+        a += lrD * (ga / B * 0.2 - 0.05 * a); b += lrD * (gb / B - 0.05 * b); c += lrD * gc / B;
+        acc = right / (2 * B); val = v / B;
+      }
+      let gm = 0, gs = 0;
+      for (let i = 0; i < B; i++) { const e = randn(), x = mu + Math.exp(s) * e, d = D(x), g = (1 - d) * (2 * a * x + b); gm += g; gs += g * e * Math.exp(s); }
+      mu += lrG * gm / B; s += lrG * gs / B; step++;
+    }
+
+    // ---------- drawing ----------
+    const cv = document.getElementById('plot'), ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height, X0 = -5, X1 = 5, PL = 40, PR = 40, PT = 18, PB = 34;
+    const px = x => PL + (x - X0) / (X1 - X0) * (W - PL - PR);
+    const py = (v, max) => H - PB - v / max * (H - PT - PB);
+    const gauss = (x, m, sd) => Math.exp(-0.5 * ((x - m) / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      const xs = []; for (let i = 0; i <= 300; i++) xs.push(X0 + (X1 - X0) * i / 300);
+      const sg = Math.exp(s), maxP = Math.max(gauss(MR, MR, SR), gauss(mu, mu, sg)) * 1.1;
+      // axes
+      ctx.strokeStyle = '#e1ddf0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(PL, H - PB); ctx.lineTo(W - PR, H - PB); ctx.stroke();
+      ctx.fillStyle = '#8a86a3'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'center';
+      for (let x = -4; x <= 4; x += 2) ctx.fillText(String(x), px(x), H - PB + 18);
+      ctx.textAlign = 'left'; ctx.fillText('trajectory feature', W - PR - 110, H - 4);
+      // equilibrium line D = 0.5
+      ctx.setLineDash([5, 6]); ctx.strokeStyle = '#c9c4dd'; ctx.beginPath(); ctx.moveTo(PL, py(0.5, 1)); ctx.lineTo(W - PR, py(0.5, 1)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#a7a2bf'; ctx.textAlign = 'right'; ctx.fillText('D = ½', W - PR, py(0.5, 1) - 6);
+      // real density
+      ctx.beginPath(); ctx.moveTo(px(X0), py(0, maxP)); xs.forEach(x => ctx.lineTo(px(x), py(gauss(x, MR, SR), maxP))); ctx.lineTo(px(X1), py(0, maxP)); ctx.closePath();
+      ctx.fillStyle = 'rgba(47,143,111,.28)'; ctx.fill();
+      // generator density
+      ctx.beginPath(); xs.forEach((x, i) => { const Y = py(gauss(x, mu, sg), maxP); i ? ctx.lineTo(px(x), Y) : ctx.moveTo(px(x), Y); });
+      ctx.strokeStyle = '#5a48c8'; ctx.lineWidth = 3; ctx.stroke();
+      // samples as ticks
+      ctx.fillStyle = 'rgba(90,72,200,.55)';
+      for (let i = 0; i < 40; i++) { const x = mu + sg * randn(); if (x > X0 && x < X1) ctx.fillRect(px(x) - 1, H - PB - 8, 2, 8); }
+      // discriminator
+      ctx.beginPath(); xs.forEach((x, i) => { const Y = py(D(x), 1); i ? ctx.lineTo(px(x), Y) : ctx.moveTo(px(x), Y); });
+      ctx.strokeStyle = '#d9822b'; ctx.lineWidth = 2.5; ctx.stroke();
+      // stats
+      const gap = Math.abs(mu - MR) + Math.abs(sg - SR);
+      document.getElementById('s-step').textContent = step;
+      document.getElementById('s-acc').textContent = acc === null ? '–' : Math.round(acc * 100) + '%';
+      document.getElementById('s-val').textContent = val === null ? '–' : val.toFixed(2);
+      document.getElementById('s-gap').textContent = step ? gap.toFixed(2) : '–';
+      const ph = document.getElementById('phase');
+      if (!step) ph.textContent = 'Press Play. The student starts far from the demonstrations, so the judge can tell them apart easily.';
+      else if (acc > 0.8) ph.textContent = 'The judge is winning: it separates the student’s samples from the demonstrations. Its gradient tells the student which way to move.';
+      else if (gap > 0.15) ph.textContent = 'The student is catching up. The judge’s curve flattens as the two distributions overlap.';
+      else ph.textContent = 'Near equilibrium. The student’s samples match the demonstrations and the judge is back to guessing: D(x) ≈ ½ and accuracy ≈ 50%. Neither player can improve alone. That is the Nash equilibrium. (The best value the judge can reach here is −2·ln 2 ≈ −1.39.)';
+    }
+    function loop() { if (running) { for (let i = 0; i < 4; i++) trainStep(); draw(); requestAnimationFrame(loop); } }
+    const play = document.getElementById('play');
+    play.addEventListener('click', function () { running = !running; this.textContent = running ? '❚❚ Pause' : '▶ Play'; if (running) loop(); });
+    document.getElementById('step').addEventListener('click', function () { for (let i = 0; i < 50; i++) trainStep(); draw(); });
+    document.getElementById('task').addEventListener('click', function () { ti = (ti + 1) % TASKS.length; [MR, SR] = TASKS[ti]; draw(); });
+    document.getElementById('reset').addEventListener('click', function () { running = false; play.textContent = '▶ Play'; reset(); draw(); });
+    reset(); draw();
+
+    // ---------- architecture ----------
+    Arch.mount(document.querySelector('#gan-arch'), {
+      id: 'gan', width: 1000, height: 440, label: 'GAN training and generation',
+      columns: [],
+      modes: [
+        {id:'train', label:'Training', desc:'The generator turns noise into trajectories. The discriminator sees these alongside real demonstrations and tries to tell them apart. Both learn from its verdict: the discriminator to tell them apart better, the generator to make that harder. Training ends at the Nash equilibrium, when neither can improve.'},
+        {id:'use', label:'Generating new motions', desc:'Once trained, only the generator is needed. Each new random noise vector gives a new, valid trajectory for the task, which the robot then executes.'} ],
+      nodes: [
+        {id:'z', x:40, y:60, w:180, h:90, title:'Noise z', sub:'100-dim · uniform', info:{body:'Random latent vector. After training, points in this space correspond to different ways of doing the task.'}},
+        {id:'g', x:280, y:40, w:400, h:150, title:'Generator (student)', sub:'transposed conv ×3 + conv', lines:['Project and reshape to 512 × 16','Transposed conv k11 s4 f256 · k9 s4 f256','Transposed conv k7 s2 f128','Conv k3 s1 f8'], info:{body:'Upsamples the noise to a full trajectory in one shot. The final convolution smooths out artefacts.'}},
+        {id:'gout', x:750, y:60, w:210, h:90, title:'G(z)', sub:'512 × 8 trajectory', kind:'core', info:{body:'A trajectory made by the student.'}},
+        {id:'robot', x:770, y:185, w:190, h:80, title:'Robot', sub:'new task motion', modes:['use'], info:{body:'After training, generated trajectories are executed on the robot.'}},
+        {id:'data', x:40, y:290, w:180, h:90, title:'Demonstrations', sub:'teacher · dataset', modes:['train'], info:{body:'Recorded robot trajectories, 7 joints plus gripper over 512 steps.'}},
+        {id:'d', x:280, y:260, w:400, h:150, title:'Discriminator (judge)', sub:'1D conv ×4 + FC', modes:['train'], lines:['Conv k9 s1 f64 · k7 s2 f128','Conv k5 s2 f128 · k3 s2 f256','Fully connected 16384'], info:{body:'Learns the features that separate real motions from generated ones.'}},
+        {id:'dout', x:750, y:290, w:210, h:90, title:'Real or generated?', sub:'D(x) in [0, 1]', modes:['train'], kind:'core', info:{body:'The judge\u2019s verdict, scored with binary cross-entropy. At the Nash equilibrium it is \u00bd for every input.'}}
+      ],
+      edges: [
+        {from:'z', to:'g', label:'sample', lt:0.5},
+        {from:'g', to:'gout', label:'', lt:0.5},
+        {from:'gout', to:'d', modes:['train'], d:'M770,150 C720,200 700,230 680,265', label:'generated', lt:0.4},
+        {from:'data', to:'d', modes:['train'], label:'real', lt:0.5},
+        {from:'d', to:'dout', modes:['train'], label:'verdict', lt:0.5},
+        {from:'gout', to:'robot', modes:['use'], d:'M865,150 L865,185', label:'', lt:0.5}
+      ]
+    });
+  })();
+  </script>
+</body>
+</html>

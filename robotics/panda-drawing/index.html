@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panda Drawing Robot | Midhun</title>
+  <meta name="description" content="A Franka Panda that draws sketches with a pen, from QuickDraw strokes. Work in progress.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#drawings">Drawings</a></li>
+        <li><a href="#next">Next</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Manipulation <span class="tag wip">WIP</span></div>
+      <h1>Panda <em>drawing robot</em></h1>
+      <p class="lead">A Franka Panda that draws sketches on paper with a pen, using stroke data from the QuickDraw dataset. This is work in progress.</p>
+      <div class="meta">
+        <span class="tag">ROS 2 Jazzy</span><span class="tag">Franka Panda</span><span class="tag">QuickDraw</span><span class="tag">Gazebo</span>
+      </div>
+    </header>
+
+    <section class="block" id="drawings">
+      <div class="eyebrow">01 · Drawings</div>
+      <h2>Strokes <em>on paper</em></h2>
+      <div class="grid2">
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/drawing_star.mp4"></video><figcaption>Star.</figcaption></figure>
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/drawing_house.mp4"></video><figcaption>House.</figcaption></figure>
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/drawing_cat.mp4"></video><figcaption>Cat.</figcaption></figure>
+      </div>
+      <figure class="media-block"><img src="media/panda_before_after.png" alt="Panda drawing, before and after"><figcaption>Before and after.</figcaption></figure>
+    </section>
+
+    <section class="block" id="next">
+      <div class="eyebrow">02 · Next</div>
+      <h2>Learning to <em>draw</em></h2>
+      <p>The next stage is a generative model that lets the robot produce a drawing from a prompt, learning the drawing in its policy rather than replaying fixed strokes.</p>
+      <p class="note">Status: work in progress. Demonstrations above come from the current stroke-based version.</p>
+    </section>
+
+    <section class="block" id="links">
+      <div class="eyebrow">03 · Links</div>
+      <p><a href="https://github.com/YOUR-USERNAME/panda_drawing">Code on GitHub →</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+</body>
+</html>

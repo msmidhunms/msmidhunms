@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dr. Midhun M S | Robotics & AI</title>
+  <meta name="description" content="Dr. Midhun M S: PhD in generative AI for robot trajectory planning, with 11 years in AI across robotics research and production GenAI systems.">
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="#top">Midhun M S</a>
+      <ul>
+        <li><a href="robotics/">Robotics</a></li>
+        <li><a href="aiml/">AI/ML</a></li>
+        <li><a href="#journey">Journey</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="top">
+    <header class="home-hero">
+      <div>
+        <div class="eyebrow">PhD · Robotics · Machine Learning</div>
+        <h1>Dr. Midhun <em>M S</em></h1>
+        <p class="role">Generative AI for robots, and AI systems in production.</p>
+        <p class="lead">I spent nine years researching generative models that teach robots how to move, then two years leading teams that ship multi-agent GenAI products. Today I work across both: production AI systems and robots that learn.</p>
+        <div class="actions">
+          <a class="pill primary" href="robotics/">Robotics work</a>
+          <a class="pill" href="aiml/">AI/ML work</a>
+        </div>
+      </div>
+      <div class="arm-wrap">
+        <canvas id="arm" aria-label="Interactive robot arm. Move the pointer to steer it, click to set a target."></canvas>
+        <div class="arm-cap"><span id="arm-mode">tracing a generated trajectory</span><span>move · click</span></div>
+        <div class="arm-modes"><button type="button" class="btn" data-shape="figure8">Figure-8</button><button type="button" class="btn" data-shape="star">Star</button><button type="button" class="btn" data-shape="heart">Heart</button></div>
+      </div>
+    </header>
+
+    <div class="ticker">
+      <div class="stat"><div class="k">Years in AI</div><div class="v">11</div><div class="s">research and industry</div></div>
+      <div class="stat"><div class="k">Publications</div><div class="v">12</div><div class="s">7 journal · 5 conference</div></div>
+      <div class="stat"><div class="k">Teams mentored</div><div class="v">20+</div><div class="s">robotics &amp; AI projects</div></div>
+      <div class="stat"><div class="k">AI teams led</div><div class="v">2</div><div class="s">production GenAI platforms</div></div>
+    </div>
+
+    <section class="block" id="sections">
+      <div class="eyebrow">01 · Explore</div>
+      <h2>Choose a <em>section</em></h2>
+      <div class="doors">
+        <a class="door" href="robotics/">
+          <svg class="deco" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#5a48c8" stroke-width="6" stroke-linecap="round"><path d="M20 85 L40 50 L70 40 L85 20"/><circle cx="20" cy="85" r="6"/><circle cx="40" cy="50" r="5"/><circle cx="70" cy="40" r="4"/></g></svg>
+          <span class="num">01</span>
+          <h3>Robotics: control, simulation &amp; hardware</h3>
+          <p>From a networked robotics lab with a custom embedded controller, to ROS 2 control in simulation, to generative models that teach robots whole tasks.</p>
+          <ul>
+            <li>Robotics lab ecosystem: SCARA arm, embedded controller and GPU cluster</li>
+            <li>Self-balancing ball: classical control, three estimators</li>
+            <!-- <li>AlphaNIST reimplementation: PPO assembly on a Franka Panda</li> -->
+            <li>Quadcopter flight stack with SE(3) control</li>
+            <li>Robot learning: planning and control in one network, motion as a language, tasks as a game, disentangled skills</li>
+          </ul>
+          <span class="go">View robotics work →</span>
+        </a>
+        <a class="door" href="aiml/">
+          <svg class="deco" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#2f6f8f" stroke-width="5"><circle cx="25" cy="30" r="8"/><circle cx="25" cy="70" r="8"/><circle cx="60" cy="20" r="8"/><circle cx="60" cy="50" r="8"/><circle cx="60" cy="80" r="8"/><circle cx="88" cy="50" r="8"/><path d="M33 30 L52 20 M33 30 L52 50 M33 70 L52 50 M33 70 L52 80 M68 20 L80 50 M68 50 L80 50 M68 80 L80 50"/></g></svg>
+          <span class="num">02</span>
+          <h3>AI: research, experiments &amp; production</h3>
+          <p>Generative AI shipped to real users, research on generative models and optimisation from my PhD, and the GPU infrastructure that trained them.</p>
+          <ul>
+            <li>AI content platform with an in-editor agent</li>
+            <li>All-in-one digital marketing platform: 20 AI features</li>
+            <li>Searching without gradients: hyperparameter and latent-space search</li>
+            <li>ML training platform on a GPU cluster</li>
+          </ul>
+          <span class="go">View AI/ML work →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="block" id="journey">
+      <div class="eyebrow">02 · Journey</div>
+      <h2>From research to <em>production</em></h2>
+      <p>Hover or tap a milestone. Use the arrow keys to step through.</p>
+      <div class="timeline">
+        <div class="tl-legend"><span><i style="background:#c9c3e3"></i>Education</span><span><i style="background:#8b7be0"></i>Research</span><span><i style="background:#2f6f8f"></i>Industry</span></div>
+        <div class="tl-track" id="tl-track" role="tablist" aria-label="Career milestones"></div>
+        <div class="tl-detail" id="tl-detail" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="block" id="research">
+      <div class="eyebrow">03 · Research</div>
+      <h2>Selected <em>publications</em></h2>
+      <p>My PhD work used generative models to learn robot trajectories and tasks from examples. 12 publications in total: 7 in journals, 5 in conferences and book chapters, plus the PhD thesis.</p>
+      <div class="pubs">
+        <div class="pub"><span class="y">2025</span><div><span class="topic">PhD thesis · generative models</span><h3>Robot trajectory amenagement under structured static environment using data driven generative latent variable models</h3><p>Midhun M S · Guide: Dr. James Kurian · Ph.D. in Robotics and Artificial Intelligence, Cochin University of Science and Technology (CUSAT), 2025 · <a href="https://shodhganga.inflibnet.ac.in/handle/10603/669301" target="_blank" rel="noopener">Shodhganga ↗</a></p></div></div>
+        <div class="pub"><span class="y">2024</span><div><span class="topic">Anomaly detection · attention</span><h3>Temporal autoencoder architectures with attention for ECG anomaly detection</h3><p>International Journal of Business Intelligence and Data Mining, 24(2), 146–159 · <a href="https://doi.org/10.1504/IJBIDM.2024.136430" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2024</span><div><span class="topic">Trajectory learning</span><h3>Example-Driven Trajectory Learner for Robots under Structured Static Environment</h3><p>International Journal of Intelligent Robotics and Applications, 8(2) · <a href="https://doi.org/10.1007/s41315-024-00353-y" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2024</span><div><span class="topic">Generative models · CVAE</span><h3>Consumption and Realization of Conditional Convolutional Variational Autoencoder for Robot Trajectory Learning</h3><p>International Journal of Intelligent Systems and Applications in Engineering, 12(3) · <a href="https://ijisae.org/index.php/IJISAE/article/view/6002" target="_blank" rel="noopener">Article ↗</a></p></div></div>
+        <div class="pub"><span class="y">2023</span><div><span class="topic">Task recognition</span><h3>Robot Task Recognition Using Deep Convolutional Long Short-term Memory</h3><p>Mechatronic Systems and Control, 51(2) · <a href="https://doi.org/10.2316/J.2023.201-0353" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Healthcare AI · CNN</span><h3>Conception and Realization of an IoT-enabled Deep CNN Decision Support System for Automated Arrhythmia Classification</h3><p>Journal of Intelligent Systems, 31(1), 407–419 · <a href="https://doi.org/10.1515/jisys-2022-0015" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Kinematics · vision</span><h3>Inverse Kinematic Analysis of PUMA 560 for Vision Systems</h3><p>Smart Innovation, Systems and Technologies, vol. 265, Springer (book chapter) · <a href="https://doi.org/10.1007/978-981-16-6482-3_29" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Representation learning · β-VAE</span><h3>Task Level Disentanglement Learning in Robotics Using βVAE</h3><p>International Journal of Electrical and Computer Engineering Systems, 13(7) · <a href="https://doi.org/10.32985/ijeces.13.7.8" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Few-shot learning</span><h3>Triplet Network based Few Shot Outlier Detection System in Robot Task Planning</h3><p>Journal of Science and Technology, 7(4) · <a href="https://doi.org/10.46243/jst.2022.v7.i04.pp136-142" target="_blank" rel="noopener">DOI ↗</a></p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Few-shot learning · outlier detection</span><h3>Siamese Network based Few Shot Outlier Detection System in Robot Task Planning for Reduced Failures / Unwanted Executions</h3><p>Conference paper, ICETCMCSP 2022, SSET Ernakulam, Kerala</p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Anomaly detection · ECG</span><h3>An Autoencoder based Unsupervised Anomaly Detection in ECG Signals</h3><p>Conference paper, ICETCMCSP 2022, SSET Ernakulam, Kerala</p></div></div>
+        <div class="pub"><span class="y">2022</span><div><span class="topic">Anomaly detection · attention</span><h3>Auto Encoder Time-series Anomaly Detection Enhancement With Attention</h3><p>Conference paper, ICCISD 2022, Chaitanya University, Telangana</p></div></div>
+        <div class="pub"><span class="y">2018</span><div><span class="topic">Industrial robotics · remote control</span><h3>Realization of SNMP based Robot Controller for Remote Monitoring & Control of Industrial Robotic Arm with Emulation Facility</h3><p>Conference paper, 28th Swadeshi Science Congress 2018, CSIR-NIIST Thiruvananthapuram</p></div></div>
+      </div>
+    </section>
+
+    <section class="block" id="skills">
+      <div class="eyebrow">04 · Skills</div>
+      <h2>Where the skills <em>come from</em></h2>
+      <div class="skillmap" id="skillmap">
+        <div class="seg" style="margin-bottom:1rem;">
+          <button type="button" class="on" data-f="all">All</button>
+          <button type="button" data-f="rob">Used in robotics</button>
+          <button type="button" data-f="ai">Used in production AI</button>
+        </div>
+        <div class="sk-groups">
+          <div class="sk-group"><h3>Robotics</h3>
+            <span class="sk" data-u="rob">ROS / ROS 2</span><span class="sk" data-u="rob">Gazebo</span><span class="sk" data-u="rob">MuJoCo</span><span class="sk" data-u="rob">Webots</span><span class="sk" data-u="rob">Trajectory planning</span><span class="sk" data-u="rob">Control (PID, LQR)</span><span class="sk" data-u="rob">State estimation</span><span class="sk" data-u="rob">Reinforcement learning</span>
+          </div>
+          <div class="sk-group"><h3>Machine learning</h3>
+            <span class="sk" data-u="rob">Generative models (VAE, β-VAE, GAN)</span><span class="sk" data-u="rob">Sequence models</span><span class="sk" data-u="rob">Few-shot learning</span><span class="sk" data-u="rob ai">PyTorch</span><span class="sk" data-u="rob">TensorFlow / Keras</span><span class="sk" data-u="rob">Data generation</span>
+          </div>
+          <div class="sk-group"><h3>Generative AI &amp; LLMs</h3>
+            <span class="sk" data-u="ai">Multi-agent orchestration</span><span class="sk" data-u="ai">RAG</span><span class="sk" data-u="ai">LLM evaluation</span><span class="sk" data-u="ai">Prompt &amp; context engineering</span><span class="sk" data-u="ai">Model routing &amp; caching</span><span class="sk" data-u="ai">LangChain</span>
+          </div>
+          <div class="sk-group"><h3>Engineering &amp; leadership</h3>
+            <span class="sk" data-u="rob ai">Python</span><span class="sk" data-u="rob ai">Docker</span><span class="sk" data-u="ai">CI/CD &amp; MLOps</span><span class="sk" data-u="rob">GPU / HPC training</span><span class="sk" data-u="ai">Architecture ownership</span><span class="sk" data-u="ai">Team leadership</span><span class="sk" data-u="rob">Mentoring</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="contact">
+      <div class="eyebrow">05 · Contact</div>
+      <h2>Let's <em>talk</em></h2>
+      <p>I'm open to new opportunities. Feel free to get in touch.</p>
+      <div class="contact-row">
+        <a class="pill primary" href="#contact" id="email-link" data-u="midhunms.doe+portfolio" data-d="gmail.com">Email</a>
+        <a class="pill" href="https://www.linkedin.com/in/drmidhunms/">LinkedIn</a>
+        <a class="pill" href="https://github.com/msmidhunms">GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="./">Home</a> · <a href="robotics/">Robotics</a> · <a href="aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+  <script src="assets/home.js"></script>
+  <script>(function(){var a=document.getElementById('email-link');if(a){a.href='mailto:'+a.dataset.u+'@'+a.dataset.d;}})();</script>
+</body>
+</html>

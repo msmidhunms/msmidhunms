@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quad Flight Stack</title>
+  <link rel="stylesheet" href="../../../assets/plex.css">
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: single reading column (~72ch) with full-width figure plates; spec-sheet rhythm. */
+  :root {
+    --bg: #f3f5f6;
+    --plate: #ffffff;
+    --fg: #15202a;
+    --muted: #56636e;
+    --line: #8d99a3;
+    --rule: #d9dfe3;
+    --accent: #d9560b;      /* actuation path: commands that end at the motors */
+    --sense: #137487;       /* sensing / feedback path */
+    --tint: #fdf0e7;
+    --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1317; --plate: #151c22; --fg: #e3eaef; --muted: #96a3ad; --line: #5d6a74;
+      --rule: #26313a; --accent: #ff8a42; --sense: #49bfd4; --tint: #2a1c12; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1317; --plate: #151c22; --fg: #e3eaef; --muted: #96a3ad; --line: #5d6a74;
+    --rule: #26313a; --accent: #ff8a42; --sense: #49bfd4; --tint: #2a1c12; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font: 16px/1.6 var(--sans);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 40px 72px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+  header { display: grid; gap: 14px; max-width: 760px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  h1 { font: 700 clamp(34px, 5vw, 52px)/1.02 var(--display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .lede { margin: 0; color: var(--muted); font-size: 18px; max-width: 68ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-top: 6px; }
+  .facts div { padding: 10px 18px 10px 0; margin-right: 18px; border-right: 1px solid var(--rule); }
+  .facts div:last-child { border-right: 0; }
+  .facts b { display: block; font: 600 20px/1.2 var(--display); font-variant-numeric: tabular-nums; }
+  .facts span { font: 12px var(--mono); color: var(--muted); }
+  section { display: grid; gap: 16px; min-width: 0; }
+  section > *, .wrap > * { min-width: 0; }
+  .sec-head { display: grid; gap: 6px; max-width: 72ch; }
+  .tag { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: 0.08em; }
+  h2 { font: 600 28px/1.15 var(--display); margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 72ch; }
+  p + p { margin-top: 10px; }
+  .prose { display: grid; gap: 10px; }
+  code, .mono { font-family: var(--mono); font-size: 0.88em; }
+  code { background: var(--tint); padding: 1px 5px; border-radius: 3px; }
+  figure { margin: 0; background: var(--plate); border: 1px solid var(--rule); border-radius: 6px; }
+  .scroll { overflow-x: auto; padding: 18px 18px 6px; }
+  figure svg { display: block; width: 100%; min-width: 820px; height: auto; color: var(--fg); }
+  figcaption { padding: 10px 18px 16px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--rule); max-width: none; }
+  figcaption b { color: var(--fg); font-weight: 600; }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 12px var(--mono); color: var(--muted); padding: 0 18px 12px; }
+  .key i { display: inline-block; width: 26px; height: 0; vertical-align: middle; margin-right: 6px; border-top: 2px solid var(--fg); }
+  .key i.a { border-color: var(--accent); } .key i.s { border-color: var(--sense); } .key i.d { border-top-style: dashed; }
+
+  /* svg vocabulary */
+  svg text { fill: var(--fg); font-family: var(--sans); font-size: 13px; }
+  svg .t { font-family: var(--sans); font-weight: 600; font-size: 14px; }
+  svg .s { fill: var(--muted); font-size: 12px; }
+  svg .m { font-family: var(--mono); font-size: 11.5px; }
+  svg .ms { font-family: var(--mono); font-size: 11.5px; fill: var(--muted); }
+  svg .cap { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; fill: var(--muted); }
+  svg .hotx { fill: var(--accent); }
+  svg .sensx { fill: var(--sense); }
+  svg .bx { fill: var(--plate); stroke: var(--line); stroke-width: 1.2; }
+  svg .bx.hot { stroke: var(--accent); stroke-width: 2; }
+  svg .bx.inner { fill: var(--bg); }
+  svg .grp { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 5; }
+  svg .grp.hot { stroke: var(--accent); stroke-dasharray: none; stroke-width: 1.6; fill: var(--tint); }
+  svg .band { fill: var(--tint); stroke: var(--accent); stroke-width: 1; }
+  svg .ln { fill: none; stroke: var(--fg); stroke-width: 1.4; }
+  svg .ln.a { stroke: var(--accent); stroke-width: 1.8; }
+  svg .ln.s { stroke: var(--sense); stroke-width: 1.6; }
+  svg .ln.d { stroke-dasharray: 5 4; }
+  svg .mk { fill: var(--fg); }
+  svg .mk.a { fill: var(--accent); }
+  svg .mk.s { fill: var(--sense); }
+  svg .sum { fill: var(--plate); stroke: var(--fg); stroke-width: 1.4; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  .tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .tables > div { min-width: 0; overflow-x: auto; background: var(--plate); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 16px 12px; }
+  th, td { text-align: left; padding: 7px 8px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  td.n { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  .tables h3 { font: 600 16px var(--display); margin: 10px 0 4px; }
+  ul.repo { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; max-width: 80ch; }
+  ul.repo li { display: grid; grid-template-columns: minmax(150px, 230px) 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  ul.repo li > * { min-width: 0; }
+  @media (max-width: 560px) { ul.repo li { grid-template-columns: 1fr; gap: 2px; } .facts div { border-right: 0; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">2004_drone_control · architecture</div>
+    <h1>Quad Flight Stack</h1>
+    <p class="lede">How the quadcopter simulation is put together: what runs where in Docker, which ROS&nbsp;2 nodes talk over which topics, how the controller turns a reference into four rotor speeds, and how a logged flight becomes a rendered video.</p>
+    <div class="facts">
+      <div><b>1.50 kg</b><span>X-frame, 9" props</span></div>
+      <div><b>2.8</b><span>thrust / weight</span></div>
+      <div><b>250 Hz</b><span>control, sim time</span></div>
+      <div><b>1 kHz</b><span>Gazebo physics</span></div>
+      <div><b>0.07–0.14 m</b><span>mean tracking error</span></div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== 1 -->
+  <section id="deployment">
+    <div class="sec-head">
+      <span class="tag">FIG 1 · DEPLOYMENT</span>
+      <h2>Two containers, one browser</h2>
+      <p>Everything ROS and Gazebo lives in the <code>drone_sim</code> container. Your browser is the only thing outside it: one tab is the ground station, the other is the VNC desktop where Gazebo and RViz draw. A USB gamepad reaches the container through the browser, because Docker on macOS cannot pass USB devices through.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 610" role="img" aria-label="Deployment: browser tabs on the Mac talk to web_ui, rosbridge and noVNC inside the drone_sim container; the ROS flight stack talks to the Gazebo server through ros_gz_bridge; a shared data folder carries flight logs to the Blender render container.">
+        <defs>
+          <marker id="f1k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk a" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <!-- groups -->
+        <rect class="grp" x="10" y="30" width="210" height="520" rx="8"/>
+        <text class="cap" x="24" y="52">YOUR MAC</text>
+        <rect class="grp" x="260" y="30" width="500" height="520" rx="8"/>
+        <text class="cap" x="274" y="52">DOCKER · drone_sim  (ros:jazzy + gz harmonic)</text>
+        <rect class="grp" x="790" y="30" width="200" height="520" rx="8"/>
+        <text class="cap" x="804" y="52">DOCKER · render</text>
+
+        <!-- mac -->
+        <rect class="bx" x="30" y="70" width="170" height="180" rx="6"/>
+        <text class="t" x="44" y="92">Browser</text>
+        <rect class="bx inner" x="44" y="106" width="142" height="56" rx="4"/>
+        <text x="56" y="129">Ground station</text>
+        <text class="ms" x="56" y="148">localhost:8080</text>
+        <rect class="bx inner" x="44" y="176" width="142" height="56" rx="4"/>
+        <text x="56" y="199">Desktop · noVNC</text>
+        <text class="ms" x="56" y="218">localhost:6080</text>
+        <rect class="bx" x="30" y="282" width="170" height="44" rx="6"/>
+        <text class="t" x="44" y="309">USB gamepad</text>
+        <line class="ln" x1="115" y1="282" x2="115" y2="252" marker-end="url(#f1k)"/>
+        <text class="s" x="122" y="272">Gamepad API</text>
+        <rect class="bx" x="30" y="360" width="170" height="50" rx="6"/>
+        <text class="t" x="44" y="382">src/</text>
+        <text class="s" x="44" y="400">your code, edited on the host</text>
+        <rect class="bx" x="30" y="440" width="170" height="50" rx="6"/>
+        <text class="t" x="44" y="462">data/</text>
+        <text class="s" x="44" y="480">logs/*.csv · renders/*.mp4</text>
+        <line class="ln" x1="200" y1="385" x2="258" y2="385" marker-end="url(#f1k)"/>
+        <text class="s" x="206" y="377">mount</text>
+        <line class="ln" x1="115" y1="490" x2="115" y2="560" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+
+        <!-- container row 1 -->
+        <rect class="bx" x="280" y="106" width="140" height="56" rx="6"/>
+        <text class="t" x="294" y="129">web_ui</text>
+        <text class="s" x="294" y="148">serves the page</text>
+        <rect class="bx" x="440" y="106" width="140" height="56" rx="6"/>
+        <text class="t" x="454" y="129">rosbridge</text>
+        <text class="ms" x="454" y="148">WebSocket :9090</text>
+        <rect class="bx" x="600" y="106" width="140" height="56" rx="6"/>
+        <text class="t" x="614" y="129">noVNC · x11vnc</text>
+        <text class="s" x="614" y="148">Xvfb :1, llvmpipe GL</text>
+
+        <line class="ln" x1="186" y1="134" x2="278" y2="134" marker-end="url(#f1k)"/>
+        <text class="s" x="214" y="126">HTTP</text>
+        <polyline class="ln" points="186,114 236,114 236,90 510,90 510,104" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+        <text class="s" x="262" y="82">Joy 30 Hz out · telemetry in · service calls</text>
+        <polyline class="ln" points="186,204 640,204 640,164" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+        <text class="s" x="300" y="196">VNC over WebSocket</text>
+
+        <!-- container row 2 -->
+        <rect class="bx hot" x="280" y="222" width="300" height="118" rx="6"/>
+        <text class="t" x="294" y="245">ROS 2 flight stack</text>
+        <text class="m" x="294" y="268">flight_controller</text>
+        <text class="m" x="444" y="268">teleop</text>
+        <text class="m" x="294" y="288">mission_manager</text>
+        <text class="m" x="444" y="288">visualizer</text>
+        <text class="m" x="294" y="308">flight_recorder</text>
+        <text class="m" x="444" y="308">web_ui</text>
+        <text class="s" x="294" y="328">rclpy, use_sim_time</text>
+        <rect class="bx" x="600" y="222" width="140" height="118" rx="6"/>
+        <text class="t" x="614" y="245">Gazebo GUI</text>
+        <text class="t" x="614" y="265">RViz</text>
+        <text class="s" x="614" y="292">draw into the</text>
+        <text class="s" x="614" y="309">virtual display</text>
+        <line class="ln" x1="700" y1="222" x2="700" y2="164" marker-end="url(#f1k)"/>
+        <line class="ln" x1="510" y1="164" x2="510" y2="220" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+        <text class="s" x="517" y="198">topics</text>
+
+        <!-- bridge + gz -->
+        <rect class="bx" x="280" y="372" width="300" height="48" rx="6"/>
+        <text class="t" x="294" y="394">ros_gz_bridge</text>
+        <text class="s" x="294" y="411">ROS 2 DDS ⇄ gz-transport</text>
+        <line class="ln a" x1="400" y1="340" x2="400" y2="370" marker-end="url(#f1a)"/>
+        <text class="s hotx" x="330" y="360">motors</text>
+        <line class="ln s" x1="470" y1="372" x2="470" y2="342" marker-end="url(#f1k)"/>
+        <text class="s sensx" x="477" y="360">odom · imu · clock</text>
+        <rect class="bx hot" x="280" y="452" width="460" height="80" rx="6"/>
+        <text class="t" x="294" y="476">Gazebo Harmonic server</text>
+        <text class="s" x="294" y="497">physics 1 kHz · 4 × MulticopterMotorModel · IMU · odometry · wind gusts</text>
+        <text class="s" x="294" y="516">airfield world: helipad, 4 racing gates, trees, hangars</text>
+        <line class="ln" x1="430" y1="420" x2="430" y2="450" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+        <line class="ln" x1="670" y1="340" x2="670" y2="450" marker-end="url(#f1k)" marker-start="url(#f1k)"/>
+        <text class="s" x="677" y="400">scene</text>
+
+        <!-- recorder to data -->
+        <polyline class="ln" points="280,318 270,318 270,558" marker-end="url(#f1k)"/>
+
+        <!-- render -->
+        <rect class="bx" x="810" y="222" width="160" height="118" rx="6"/>
+        <text class="t" x="824" y="245">Blender Cycles</text>
+        <text class="m" x="824" y="266">render_flight.py</text>
+        <text class="s" x="824" y="289">world SDF + drone</text>
+        <text class="s" x="824" y="306">from vehicle.yaml</text>
+        <text class="s" x="824" y="326">ffmpeg → MP4</text>
+        <line class="ln" x1="860" y1="558" x2="860" y2="342" marker-end="url(#f1k)"/>
+        <text class="s" x="866" y="452">CSV</text>
+        <line class="ln" x1="930" y1="342" x2="930" y2="558" marker-end="url(#f1k)"/>
+        <text class="s" x="936" y="452">MP4</text>
+
+        <!-- shared volume -->
+        <rect class="band" x="30" y="562" width="960" height="30" rx="4"/>
+        <text class="m" x="290" y="582">./data ⇄ /data   bind mount shared by both containers · flight_recorder writes CSV at 50 Hz</text>
+      </svg>
+      </div>
+      <div class="key"><span><i class="a"></i>commands that end at the motors</span><span><i class="s"></i>sensor data</span><span><i></i>everything else</span></div>
+      <figcaption><b>One port per job.</b> 8080 serves the ground-station page, 9090 is rosbridge (the page publishes <code>/joy</code> and subscribes to telemetry through it), 6080 is the noVNC desktop the page embeds. <code>./src</code> is bind-mounted and rebuilt when the container starts, so you edit on the Mac and restart.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== 2 -->
+  <section id="ros-graph">
+    <div class="sec-head">
+      <span class="tag">FIG 2 · ROS 2 GRAPH</span>
+      <h2>Who publishes what</h2>
+      <p><code>flight_controller</code> is the only node that commands the motors. Pilot and autonomy reach it through two different inputs, so it always knows which source it is following. Everything else listens to one status topic.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 450" role="img" aria-label="ROS graph: the joystick publishes /joy to teleop, teleop publishes /drone/cmd_vel and calls takeoff/land services on flight_controller, mission_manager streams /drone/reference; flight_controller sends /drone/motor_speed through ros_gz_bridge to Gazebo and receives odometry and IMU back; /drone/status fans out to the ground station, visualizer and recorder.">
+        <defs>
+          <marker id="f2k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk a" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f2s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk s" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="bx" x="20" y="40" width="170" height="56" rx="6"/>
+        <text class="t" x="34" y="63">Joystick</text>
+        <text class="s" x="34" y="82">browser · joy_node</text>
+        <rect class="bx" x="270" y="40" width="170" height="56" rx="6"/>
+        <text class="t" x="284" y="63">teleop</text>
+        <text class="s" x="284" y="82">deadband · expo · buttons</text>
+        <rect class="bx" x="270" y="200" width="170" height="56" rx="6"/>
+        <text class="t" x="284" y="223">mission_manager</text>
+        <text class="s" x="284" y="242">missions.yaml</text>
+        <rect class="bx hot" x="520" y="110" width="180" height="80" rx="6"/>
+        <text class="t" x="534" y="134">flight_controller</text>
+        <text class="s" x="534" y="154">commander + SE(3) control</text>
+        <text class="ms" x="534" y="174">on every /drone/odom</text>
+        <rect class="bx" x="832" y="110" width="158" height="56" rx="6"/>
+        <text class="t" x="846" y="133">ros_gz_bridge</text>
+        <text class="s" x="846" y="152">bridge.yaml</text>
+        <rect class="bx" x="832" y="250" width="158" height="56" rx="6"/>
+        <text class="t" x="846" y="273">Gazebo</text>
+        <text class="s" x="846" y="292">motors · IMU · odometry</text>
+        <rect class="bx" x="20" y="340" width="170" height="56" rx="6"/>
+        <text class="t" x="34" y="363">Ground station</text>
+        <text class="s" x="34" y="382">via rosbridge</text>
+        <rect class="bx" x="270" y="340" width="170" height="56" rx="6"/>
+        <text class="t" x="284" y="363">visualizer</text>
+        <text class="s" x="284" y="382">TF · markers · path</text>
+        <rect class="bx" x="520" y="340" width="180" height="56" rx="6"/>
+        <text class="t" x="534" y="363">flight_recorder</text>
+        <text class="s" x="534" y="382">CSV for the video</text>
+
+        <!-- joy -->
+        <line class="ln" x1="190" y1="68" x2="268" y2="68" marker-end="url(#f2k)"/>
+        <text class="m" x="208" y="60">/joy</text>
+        <line class="ln" x1="60" y1="340" x2="60" y2="98" marker-end="url(#f2k)"/>
+        <text class="s" x="66" y="230">publishes Joy</text>
+        <!-- teleop -> fc -->
+        <polyline class="ln" points="440,58 620,58 620,108" marker-end="url(#f2k)"/>
+        <text class="m" x="452" y="50">/drone/cmd_vel</text>
+        <polyline class="ln d" points="440,84 570,84 570,108" marker-end="url(#f2k)"/>
+        <text class="s" x="448" y="102">takeoff · land · arm</text>
+        <line class="ln d" x1="355" y1="96" x2="355" y2="198" marker-end="url(#f2k)"/>
+        <text class="s" x="362" y="152">mission/start</text>
+        <!-- mission -> fc -->
+        <polyline class="ln" points="440,216 600,216 600,192" marker-end="url(#f2k)"/>
+        <text class="m" x="448" y="208">/drone/reference</text>
+        <text class="s" x="448" y="234">stamped, 100 Hz</text>
+        <polyline class="ln d" points="440,246 650,246 650,192" marker-end="url(#f2k)"/>
+        <text class="s" x="560" y="266">mode/auto</text>
+        <!-- fc <-> bridge -->
+        <line class="ln a" x1="700" y1="128" x2="830" y2="128" marker-end="url(#f2a)"/>
+        <text class="m hotx" x="704" y="120">/drone/motor_speed</text>
+        <line class="ln s" x1="832" y1="156" x2="702" y2="156" marker-end="url(#f2s)"/>
+        <text class="m sensx" x="712" y="176">/drone/odom</text>
+        <text class="m sensx" x="712" y="192">/drone/imu</text>
+        <line class="ln" x1="911" y1="168" x2="911" y2="248" marker-end="url(#f2k)" marker-start="url(#f2k)"/>
+        <text class="s" x="918" y="212">gz-transport</text>
+        <!-- status bus -->
+        <polyline class="ln" points="690,190 690,310 140,310 140,338" marker-end="url(#f2k)"/>
+        <line class="ln" x1="355" y1="310" x2="355" y2="338" marker-end="url(#f2k)"/>
+        <line class="ln" x1="610" y1="310" x2="610" y2="338" marker-end="url(#f2k)"/>
+        <text class="m" x="384" y="302">/drone/status · FlightStatus · 50 Hz</text>
+        <!-- legend -->
+        <line class="ln" x1="20" y1="432" x2="50" y2="432"/><text class="s" x="58" y="436">topic</text>
+        <line class="ln d" x1="110" y1="432" x2="140" y2="432"/><text class="s" x="148" y="436">service call</text>
+      </svg>
+      </div>
+      <figcaption><b>Two entry points, never mixed.</b> Sticks arrive as a velocity command (<code>/drone/cmd_vel</code>); autonomy arrives as a full time-stamped reference (<code>/drone/reference</code>). The commander picks one by mode. The ground station is just another joystick: it publishes <code>sensor_msgs/Joy</code> in the same layout as <code>joy_node</code>.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== 3 -->
+  <section id="control">
+    <div class="sec-head">
+      <span class="tag">FIG 3 · CONTROL LOOP</span>
+      <h2>From reference to rotor speeds</h2>
+      <p>A geometric tracking controller on SE(3). The outer loop turns position error into a desired acceleration, that acceleration fixes the thrust direction and therefore the desired attitude, and the inner loop drives the attitude error to zero on the rotation group itself, with no Euler angles and no gimbal lock. Both loops run once per odometry message, so control stays locked to simulation time even when Gazebo runs slower than real time.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 400" role="img" aria-label="Control block diagram: reference minus estimated state feeds the position loop, limits, thrust and attitude synthesis, the SO(3) attitude controller and the mixer; rotor speeds drive the motors and rigid body in Gazebo; odometry and IMU feed estimation, which closes the outer position loop and the inner attitude loop.">
+        <defs>
+          <marker id="f3k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk a" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f3s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk s" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="grp" x="110" y="40" width="884" height="150" rx="8"/>
+        <text class="cap" x="124" y="32">flight_controller · runs on every odometry message (250 Hz, sim time)</text>
+        <rect class="grp" x="340" y="226" width="650" height="134" rx="8"/>
+        <text class="cap" x="354" y="378">GAZEBO</text>
+
+        <rect class="bx" x="10" y="72" width="86" height="86" rx="6"/>
+        <text class="t" x="20" y="96">Reference</text>
+        <text class="m" x="20" y="120">p  v  a</text>
+        <text class="m" x="20" y="140">ψ  dψ/dt</text>
+        <line class="ln" x1="96" y1="115" x2="135" y2="115" marker-end="url(#f3k)"/>
+        <circle class="sum" cx="150" cy="115" r="13"/>
+        <text class="m" x="144" y="119">Σ</text>
+        <text class="m" x="124" y="106">+</text>
+        <text class="m" x="156" y="146">−</text>
+        <line class="ln" x1="163" y1="115" x2="178" y2="115" marker-end="url(#f3k)"/>
+
+        <rect class="bx" x="180" y="72" width="160" height="86" rx="6"/>
+        <text class="t" x="192" y="94">Position loop</text>
+        <text class="m" x="192" y="118">a = a_d − K_p e_p</text>
+        <text class="m" x="192" y="136">  − K_v e_v − K_i ∫e_p</text>
+        <line class="ln" x1="340" y1="115" x2="358" y2="115" marker-end="url(#f3k)"/>
+
+        <rect class="bx" x="360" y="72" width="115" height="86" rx="6"/>
+        <text class="t" x="372" y="94">Limits</text>
+        <text class="s" x="372" y="118">tilt ≤ 35°</text>
+        <text class="s" x="372" y="136">|a_xy| ≤ 6 m/s²</text>
+        <line class="ln" x1="475" y1="115" x2="493" y2="115" marker-end="url(#f3k)"/>
+
+        <rect class="bx" x="495" y="72" width="158" height="86" rx="6"/>
+        <text class="t" x="507" y="94">Thrust &amp; attitude</text>
+        <text class="m" x="507" y="118">f = m(a + g e₃)</text>
+        <text class="m" x="507" y="136">R_d from f and ψ</text>
+        <line class="ln" x1="653" y1="115" x2="673" y2="115" marker-end="url(#f3k)"/>
+        <text class="m" x="651" y="106">R_d</text>
+        <polyline class="ln" points="630,72 630,56 937,56 937,70" marker-end="url(#f3k)"/>
+        <text class="m" x="760" y="50">T = f · R e₃</text>
+
+        <rect class="bx" x="675" y="72" width="192" height="86" rx="6"/>
+        <text class="t" x="687" y="94">SO(3) attitude</text>
+        <text class="m" x="687" y="118">τ = J(−K_R e_R − K_ω e_ω)</text>
+        <text class="m" x="687" y="136">  + ω × Jω</text>
+        <line class="ln" x1="867" y1="115" x2="887" y2="115" marker-end="url(#f3k)"/>
+        <text class="m" x="872" y="107">τ</text>
+
+        <rect class="bx hot" x="889" y="72" width="97" height="86" rx="6"/>
+        <text class="t" x="899" y="94">Mixer</text>
+        <text class="s" x="899" y="116">A⁻¹ allocation</text>
+        <text class="s" x="899" y="134">yaw yields first</text>
+
+        <!-- plant -->
+        <line class="ln a" x1="937" y1="158" x2="937" y2="256" marker-end="url(#f3a)"/>
+        <text class="m hotx" x="882" y="212">ω₁…ω₄</text>
+        <rect class="bx hot" x="840" y="258" width="140" height="84" rx="6"/>
+        <text class="t" x="852" y="281">Motors ×4</text>
+        <text class="s" x="852" y="302">lag 12.5 / 25 ms</text>
+        <text class="m" x="852" y="322">F = k ω²</text>
+        <line class="ln a" x1="840" y1="300" x2="802" y2="300" marker-end="url(#f3a)"/>
+        <rect class="bx" x="600" y="258" width="200" height="84" rx="6"/>
+        <text class="t" x="612" y="281">Rigid body, 6-DoF</text>
+        <text class="s" x="612" y="302">gravity · rotor drag</text>
+        <text class="s" x="612" y="320">wind gusts</text>
+        <line class="ln" x1="600" y1="300" x2="562" y2="300" marker-end="url(#f3k)"/>
+        <rect class="bx" x="360" y="258" width="200" height="84" rx="6"/>
+        <text class="t" x="372" y="281">Odometry + IMU</text>
+        <text class="s" x="372" y="302">pose 250 Hz</text>
+        <text class="s" x="372" y="320">gyro with noise</text>
+        <line class="ln s" x1="360" y1="300" x2="322" y2="300" marker-end="url(#f3s)"/>
+        <rect class="bx" x="120" y="258" width="200" height="84" rx="6"/>
+        <text class="t" x="132" y="281">Estimation</text>
+        <text class="s" x="132" y="302">v = Δp / Δt, filtered</text>
+        <text class="s" x="132" y="320">ω from the gyro</text>
+        <!-- feedback -->
+        <line class="ln s" x1="150" y1="258" x2="150" y2="130" marker-end="url(#f3s)"/>
+        <text class="m sensx" x="158" y="222">p, v</text>
+        <polyline class="ln s" points="300,258 300,206 772,206 772,160" marker-end="url(#f3s)"/>
+        <text class="m sensx" x="470" y="200">R, ω  (inner loop)</text>
+      </svg>
+      </div>
+      <figcaption><b>Nested loops, one rate.</b> The outer loop (through Σ) closes on position and velocity; the inner loop closes on attitude and body rate. The mixer inverts the allocation matrix and, when a motor would saturate, gives up yaw torque first, then roll/pitch, but never collective thrust. Gains live in <code>flight.yaml</code>; mass, inertia and motor constants come from <code>vehicle.yaml</code>, the same file the Gazebo model is generated from.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== 4 -->
+  <section id="references">
+    <div class="sec-head">
+      <span class="tag">FIG 4 · REFERENCE GENERATION</span>
+      <h2>Two ways to say where to fly</h2>
+      <p>The controller only ever sees one kind of input: a smooth reference with position, velocity, acceleration and heading. Manual flying and missions are two different ways of producing it.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 300" role="img" aria-label="Manual lane: sticks are shaped, become a heading-frame velocity command, are integrated with an acceleration limit and constrained by leash, floor and geofence. Auto lane: a mission is joined with a quintic transition, sampled at 100 Hz with a timestamp and extrapolated to the control instant. Both lanes produce the same reference for the controller.">
+        <defs>
+          <marker id="f4k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <text class="cap" x="10" y="44">MANUAL · HOLD</text>
+        <text class="cap" x="10" y="194">AUTO</text>
+        <!-- lane A -->
+        <rect class="bx" x="10" y="56" width="150" height="64" rx="6"/>
+        <text class="t" x="22" y="80">Sticks / keys</text>
+        <text class="s" x="22" y="100">Mode 2 layout</text>
+        <rect class="bx" x="185" y="56" width="160" height="64" rx="6"/>
+        <text class="t" x="197" y="80">Shape</text>
+        <text class="s" x="197" y="100">deadband · expo curve</text>
+        <rect class="bx" x="370" y="56" width="160" height="64" rx="6"/>
+        <text class="t" x="382" y="80">Velocity command</text>
+        <text class="s" x="382" y="100">heading frame, ≤ 5 m/s</text>
+        <rect class="bx" x="555" y="56" width="150" height="64" rx="6"/>
+        <text class="t" x="567" y="80">Integrate</text>
+        <text class="s" x="567" y="100">accel ≤ 3.5 m/s²</text>
+        <rect class="bx" x="730" y="56" width="140" height="64" rx="6"/>
+        <text class="t" x="742" y="80">Guard rails</text>
+        <text class="s" x="742" y="100">leash 2 m, floor, fence</text>
+        <line class="ln" x1="160" y1="88" x2="183" y2="88" marker-end="url(#f4k)"/>
+        <line class="ln" x1="345" y1="88" x2="368" y2="88" marker-end="url(#f4k)"/>
+        <line class="ln" x1="530" y1="88" x2="553" y2="88" marker-end="url(#f4k)"/>
+        <line class="ln" x1="705" y1="88" x2="728" y2="88" marker-end="url(#f4k)"/>
+        <!-- lane B -->
+        <rect class="bx" x="10" y="206" width="150" height="64" rx="6"/>
+        <text class="t" x="22" y="230">missions.yaml</text>
+        <text class="s" x="22" y="250">figure8 · gates · …</text>
+        <rect class="bx" x="185" y="206" width="160" height="64" rx="6"/>
+        <text class="t" x="197" y="230">Transition</text>
+        <text class="s" x="197" y="250">quintic from current state</text>
+        <rect class="bx" x="370" y="206" width="160" height="64" rx="6"/>
+        <text class="t" x="382" y="230">Trajectory</text>
+        <text class="s" x="382" y="250">lemniscate, orbit, spline</text>
+        <rect class="bx" x="555" y="206" width="150" height="64" rx="6"/>
+        <text class="t" x="567" y="230">Stream</text>
+        <text class="s" x="567" y="250">100 Hz, time-stamped</text>
+        <rect class="bx" x="730" y="206" width="140" height="64" rx="6"/>
+        <text class="t" x="742" y="230">Extrapolate</text>
+        <text class="m" x="742" y="250">p + vΔ + ½aΔ²</text>
+        <line class="ln" x1="160" y1="238" x2="183" y2="238" marker-end="url(#f4k)"/>
+        <line class="ln" x1="345" y1="238" x2="368" y2="238" marker-end="url(#f4k)"/>
+        <line class="ln" x1="530" y1="238" x2="553" y2="238" marker-end="url(#f4k)"/>
+        <line class="ln" x1="705" y1="238" x2="728" y2="238" marker-end="url(#f4k)"/>
+        <!-- merge -->
+        <rect class="bx hot" x="900" y="118" width="90" height="94" rx="6"/>
+        <text class="t" x="912" y="142">Reference</text>
+        <text class="m" x="912" y="166">p v a</text>
+        <text class="m" x="912" y="184">ψ dψ/dt</text>
+        <text class="s" x="912" y="202">→ Fig 3</text>
+        <polyline class="ln" points="870,88 884,88 884,140 898,140" marker-end="url(#f4k)"/>
+        <polyline class="ln" points="870,238 884,238 884,190 898,190" marker-end="url(#f4k)"/>
+        <text class="ms" x="560" y="158">stick &gt; 0.3 m/s in AUTO → MANUAL</text>
+        <text class="ms" x="560" y="176">AUTO stream silent 0.3 s → HOLD</text>
+      </svg>
+      </div>
+      <figcaption><b>Why the auto lane is time-stamped.</b> The mission node samples the trajectory on a timer, and timers on simulation time fire in bursts when the machine is busy. Each sample carries the instant it describes; the controller pushes it forward to its own control time with the sample's velocity and acceleration. Before this change (together with a fix for duplicated odometry) tracking at 4 m/s was about four times worse in testing. HOLD is the manual lane with the sticks centred: the drone brakes at 3.5 m/s² and stays put.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== 5 -->
+  <section id="states">
+    <div class="sec-head">
+      <span class="tag">FIG 5 · FLIGHT STATES</span>
+      <h2>The commander's state machine</h2>
+      <p>Every button, service call and failsafe is a transition on this graph. Modes only exist while flying; landing always hands control back to MANUAL.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 360" role="img" aria-label="State machine: DISARMED to ARMED on arm, back after 15 s idle; takeoff from ARMED or directly from DISARMED with auto-arm; TAKEOFF to FLYING when the climb completes; FLYING contains MANUAL, AUTO and HOLD; land leads to LANDING and touchdown to DISARMED.">
+        <defs>
+          <marker id="f5k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="f5a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk a" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="bx" x="20" y="150" width="130" height="50" rx="25"/>
+        <text class="t" x="44" y="180">DISARMED</text>
+        <rect class="bx" x="210" y="150" width="130" height="50" rx="25"/>
+        <text class="t" x="246" y="180">ARMED</text>
+        <rect class="bx" x="400" y="80" width="130" height="50" rx="25"/>
+        <text class="t" x="429" y="110">TAKEOFF</text>
+        <rect class="bx" x="400" y="240" width="130" height="50" rx="25"/>
+        <text class="t" x="429" y="270">LANDING</text>
+        <rect class="grp hot" x="600" y="30" width="380" height="300" rx="14"/>
+        <text class="cap" x="616" y="54">FLYING</text>
+        <rect class="bx" x="640" y="80" width="130" height="46" rx="23"/>
+        <text class="t" x="672" y="108">MANUAL</text>
+        <rect class="bx" x="820" y="170" width="130" height="46" rx="23"/>
+        <text class="t" x="862" y="198">AUTO</text>
+        <rect class="bx" x="640" y="260" width="130" height="46" rx="23"/>
+        <text class="t" x="682" y="288">HOLD</text>
+
+        <line class="ln" x1="150" y1="166" x2="208" y2="166" marker-end="url(#f5k)"/>
+        <text class="s" x="164" y="158">arm</text>
+        <line class="ln" x1="210" y1="186" x2="152" y2="186" marker-end="url(#f5k)"/>
+        <text class="s" x="156" y="216">15 s idle</text>
+        <polyline class="ln" points="340,175 370,175 370,105 398,105" marker-end="url(#f5k)"/>
+        <text class="s" x="376" y="142">takeoff</text>
+        <polyline class="ln" points="85,150 85,60 465,60 465,78" marker-end="url(#f5k)"/>
+        <text class="s" x="96" y="52">takeoff (auto-arms)</text>
+        <line class="ln" x1="530" y1="103" x2="638" y2="103" marker-end="url(#f5k)"/>
+        <text class="s" x="536" y="95">climb done</text>
+        <line class="ln" x1="465" y1="130" x2="465" y2="238" marker-end="url(#f5k)"/>
+        <text class="s" x="472" y="190">land</text>
+        <line class="ln" x1="600" y1="265" x2="532" y2="265" marker-end="url(#f5k)"/>
+        <text class="s" x="548" y="257">land</text>
+        <polyline class="ln" points="400,276 85,276 85,202" marker-end="url(#f5k)"/>
+        <text class="s" x="180" y="294">touchdown held 0.6 s</text>
+
+        <polyline class="ln a" points="770,98 885,98 885,168" marker-end="url(#f5a)"/>
+        <text class="s" x="784" y="90">mission start</text>
+        <polyline class="ln" points="820,186 742,186 742,128" marker-end="url(#f5k)"/>
+        <text class="s" x="754" y="180">stick input</text>
+        <polyline class="ln" points="885,216 885,283 772,283" marker-end="url(#f5k)"/>
+        <text class="s" x="792" y="303">stream lost 0.3 s</text>
+        <line class="ln" x1="680" y1="260" x2="680" y2="128" marker-end="url(#f5k)"/>
+        <text class="s" x="610" y="200">manual</text>
+        <text class="ms" x="20" y="340">kill (hold K / KILL): any state → DISARMED, motors cut</text>
+      </svg>
+      </div>
+      <figcaption><b>Failsafes are edges, not special cases.</b> Moving a stick during a mission is a transition (AUTO → MANUAL), a dead mission stream is a transition (AUTO → HOLD), an armed drone left on the pad disarms itself after 15 s, and touchdown is detected by height above home plus vertical speed held for 0.6 s.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== 6 -->
+  <section id="video">
+    <div class="sec-head">
+      <span class="tag">FIG 6 · VIDEO PIPELINE</span>
+      <h2>From a flight log to a film</h2>
+      <p>Gazebo's live view is for flying. The cinematic video is rendered afterwards from the flight log, so it can take as long as it needs per frame without slowing the simulation.</p>
+    </div>
+    <figure>
+      <div class="scroll">
+      <svg viewBox="0 0 1000 160" role="img" aria-label="Video pipeline: FlightStatus at 50 Hz is logged by flight_recorder to CSV; the renderer builds the scene from the world SDF and vehicle.yaml, plans camera shots, renders with Cycles and encodes with ffmpeg into an MP4 with flight-mode captions.">
+        <defs>
+          <marker id="f6k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="bx" x="10" y="40" width="140" height="74" rx="6"/>
+        <text class="t" x="22" y="64">FlightStatus</text>
+        <text class="s" x="22" y="84">pose, rotor ω,</text>
+        <text class="s" x="22" y="101">reference, mode</text>
+        <rect class="bx" x="175" y="40" width="140" height="74" rx="6"/>
+        <text class="t" x="187" y="64">flight_recorder</text>
+        <text class="ms" x="187" y="84">flight_*.csv</text>
+        <text class="s" x="187" y="101">50 Hz, while armed</text>
+        <rect class="bx" x="340" y="40" width="140" height="74" rx="6"/>
+        <text class="t" x="352" y="64">Scene build</text>
+        <text class="s" x="352" y="84">world SDF import</text>
+        <text class="s" x="352" y="101">drone from yaml</text>
+        <rect class="bx" x="505" y="40" width="140" height="74" rx="6"/>
+        <text class="t" x="517" y="64">Shot planner</text>
+        <text class="s" x="517" y="84">pad · chase · tele</text>
+        <text class="s" x="517" y="101">low · orbit, DOF</text>
+        <rect class="bx hot" x="670" y="40" width="140" height="74" rx="6"/>
+        <text class="t" x="682" y="64">Cycles</text>
+        <text class="s" x="682" y="84">sky, sun, motion</text>
+        <text class="s" x="682" y="101">blur, prop discs</text>
+        <rect class="bx" x="835" y="40" width="155" height="74" rx="6"/>
+        <text class="t" x="847" y="64">ffmpeg</text>
+        <text class="s" x="847" y="84">mode captions</text>
+        <text class="ms" x="847" y="101">→ flight.mp4</text>
+        <line class="ln" x1="150" y1="77" x2="173" y2="77" marker-end="url(#f6k)"/>
+        <line class="ln" x1="315" y1="77" x2="338" y2="77" marker-end="url(#f6k)"/>
+        <line class="ln" x1="480" y1="77" x2="503" y2="77" marker-end="url(#f6k)"/>
+        <line class="ln" x1="645" y1="77" x2="668" y2="77" marker-end="url(#f6k)"/>
+        <line class="ln" x1="810" y1="77" x2="833" y2="77" marker-end="url(#f6k)"/>
+        <text class="ms" x="10" y="145">make render   ·   --segments 12-15,62-67   ·   --gpu (Metal on Apple Silicon)</text>
+      </svg>
+      </div>
+      <figcaption><b>The video matches the simulation because it reads the same files.</b> The renderer parses the Gazebo world SDF for every gate, tree and hangar, and builds the drone from <code>vehicle.yaml</code>. Propeller blades fade into blur discs in proportion to the logged rotor speed, and motion blur is held at camera cuts so two shots never ghost into one frame.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===================================================================== numbers -->
+  <section id="numbers">
+    <div class="sec-head">
+      <span class="tag">KEY NUMBERS</span>
+      <h2>Parameters and measured results</h2>
+    </div>
+    <div class="tables">
+      <div>
+        <h3>Vehicle (vehicle.yaml)</h3>
+        <table>
+          <tr><th>quantity</th><th>value</th></tr>
+          <tr><td>mass</td><td class="n">1.50 kg</td></tr>
+          <tr><td>inertia xx / yy / zz</td><td class="n">0.029 / 0.029 / 0.055 kg·m²</td></tr>
+          <tr><td>arm length, prop</td><td class="n">0.25 m, 9 in</td></tr>
+          <tr><td>thrust constant k</td><td class="n">8.55e-6 N·s²</td></tr>
+          <tr><td>hover / max rotor speed</td><td class="n">656 / 1100 rad/s</td></tr>
+          <tr><td>motor time constant up / down</td><td class="n">12.5 / 25 ms</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Controller (flight.yaml)</h3>
+        <table>
+          <tr><th>gain</th><th>x, y, z</th></tr>
+          <tr><td>K_p position</td><td class="n">5, 5, 9</td></tr>
+          <tr><td>K_v velocity</td><td class="n">4, 4, 5.5</td></tr>
+          <tr><td>K_i integral</td><td class="n">0.6, 0.6, 1.5</td></tr>
+          <tr><td>K_R attitude</td><td class="n">200, 200, 40</td></tr>
+          <tr><td>K_ω rate</td><td class="n">24, 24, 10</td></tr>
+          <tr><td>tilt limit</td><td class="n">35°</td></tr>
+        </table>
+      </div>
+      <div>
+        <h3>Gazebo test flight (demo_flight)</h3>
+        <table>
+          <tr><th>phase</th><th>result</th></tr>
+          <tr><td>take-off, joystick A</td><td class="n">1.5 m in ≈ 4 s</td></tr>
+          <tr><td>manual sticks released</td><td class="n">|v| &lt; 0.05 m/s</td></tr>
+          <tr><td>gates, 4 m/s</td><td class="n">mean 0.14 m, max 0.24 m</td></tr>
+          <tr><td>figure-8</td><td class="n">mean 0.07 m, max 0.13 m</td></tr>
+          <tr><td>landing, joystick B</td><td class="n">touchdown, disarmed</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== repo -->
+  <section id="repo">
+    <div class="sec-head">
+      <span class="tag">WHERE THINGS LIVE</span>
+      <h2>Repository map</h2>
+    </div>
+    <ul class="repo">
+      <li><code>drone_description/</code><span><code>vehicle.yaml</code>, the xacro SDF model generated from it, and the airfield world (generated by <code>gen_world.py</code>).</span></li>
+      <li><code>drone_control/…/controller.py</code><span>Geometric SE(3) controller (Fig 3). With <code>mixer.py</code>, <code>commander.py</code> and <code>trajectory.py</code> it has no ROS dependency.</span></li>
+      <li><code>drone_control/…/sim.py</code><span>Rigid-body simulator with Gazebo's rotor model, used by the unit tests to tune and check the controller in seconds.</span></li>
+      <li><code>drone_control/…/*_node.py</code><span>Thin ROS 2 wrappers: flight_controller, teleop, mission_manager, visualizer, flight_recorder, web_ui, demo_flight.</span></li>
+      <li><code>drone_control/…/web/</code><span>Ground station page (virtual sticks, keyboard, Gamepad API, telemetry).</span></li>
+      <li><code>drone_bringup/</code><span><code>sim.launch.py</code>, bridge, gains, joystick mapping, missions, RViz layout.</span></li>
+      <li><code>render/render_flight.py</code><span>Blender renderer (Fig 6).</span></li>
+      <li><code>docker/</code><span>Dockerfile with <code>sim</code> and <code>render</code> targets, supervisord, VNC desktop.</span></li>
+    </ul>
+  </section>
+</div>
+
+</html>

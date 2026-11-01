@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robotics | Midhun</title>
+  <meta name="description" content="Midhun's robotics projects: physical hardware and embedded firmware, ROS 2 and Gazebo simulation, control, state estimation and robot learning.">
+  <script src="../assets/theme.js"></script>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../">Midhun</a>
+      <ul>
+        <li><a href="#control">Control &amp; simulation</a></li>
+        <li><a href="#research">Research</a></li>
+        <li><a href="#hardware">Hardware</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Control, Simulation &amp; Hardware</div>
+      <h1>Robotics: <em>control</em>, simulation &amp; hardware</h1>
+      <p class="lead">
+        Physical rigs and embedded firmware, ROS 2 and Gazebo simulation, and robot learning. Built in Docker, with control and state estimation throughout.
+      </p>
+    </header>
+
+    <section class="block" id="control">
+      <div class="eyebrow">01 · Control &amp; simulation</div>
+      <h2>Robots in <em>motion</em></h2>
+      <p>Control, estimation and learning in ROS 2, Gazebo and MuJoCo, with interactive demos.</p>
+      <div class="cards">
+        <div class="card">
+          <img class="thumb" src="self-balancing-ball/media/fig_rig.png" alt="Self-balancing ball rig">
+          <span class="num">01.1</span>
+          <h3>Self-Balancing Ball</h3>
+          <p>A round platform on four independently controlled hydraulic rods keeps a ball on its surface. Position is estimated three ways, one after another: direct measurement, single-camera vision, and IMU sensor fusion. Classical control only.</p>
+          <div><span class="tag">ROS 2</span><span class="tag">Docker</span><span class="tag">Control</span><span class="tag">Sensor fusion</span></div>
+          <a class="link" href="self-balancing-ball/">Project details →</a>
+        </div>
+        <div class="card">
+          <img class="thumb" src="quadcopter/media/render_gate.png" alt="Quadcopter racing gate render">
+          <span class="num">01.2</span>
+          <h3>Quadcopter Control</h3>
+          <p>A quadcopter in ROS 2 and a simulator, controllable from a joystick-style interface and autonomously by a controller, with a visualisation of the flight.</p>
+          <div><span class="tag">ROS 2</span><span class="tag">Simulation</span><span class="tag">Control</span></div>
+          <a class="link" href="quadcopter/">Project details →</a>
+        </div>
+        <!-- Hidden for now: AlphaNIST in ROS 2
+        <div class="card">
+          <video class="thumb" muted playsinline preload="metadata" src="alphanist/media/policy.mp4"></video>
+          <span class="num">01.3</span>
+          <h3>AlphaNIST in ROS 2</h3>
+          <p>A reimplementation of the AlphaNIST robotics paper (arXiv 2610.13354) in ROS 2 with Gazebo simulation. Each implementation step is a separate commit.</p>
+          <div><span class="tag">ROS 2</span><span class="tag">Gazebo</span><span class="tag">Paper reproduction</span></div>
+          <a class="link" href="alphanist/">Project details →</a>
+        </div>
+        -->
+        <div class="card">
+          <img class="thumb" src="panda-drawing/media/panda_before_after.png" alt="Panda drawing robot">
+          <span class="num">01.3</span>
+          <h3>Panda Drawing Robot <span class="tag wip">WIP</span></h3>
+          <p>A Franka Panda that draws sketches on paper with a pen, using QuickDraw stroke data. The next stage is a generative model that lets the robot learn to draw from a prompt.</p>
+          <div><span class="tag">ROS 2</span><span class="tag">Manipulation</span><span class="tag">Generative models</span></div>
+          <a class="link" href="panda-drawing/">Project details →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="research">
+      <div class="eyebrow">02 · Robot learning research</div>
+      <h2>Ideas from my <em>PhD</em></h2>
+      <p>Generative models that teach robots whole tasks, explained with interactive demos. Thesis and papers are linked from each page.</p>
+      <div class="cards">
+        <div class="card">
+          <img class="thumb" src="planning-and-control/media/loop.png" alt="Human planning and control loop beside its robot equivalent">
+          <span class="num">02.1</span>
+          <h3>Planning and Control in One Network</h3>
+          <p>Inspired by how the brain plans a task and controls the body, a CNN-VAE and a CNN-LSTM VAE join robot task planning and motor control in one generative network, using proprioception alone.</p>
+          <div><span class="tag">CNN-VAE</span><span class="tag">CNN-LSTM VAE</span><span class="tag">Bio-inspired</span><span class="tag">Interactive demo</span></div>
+          <a class="link" href="planning-and-control/">Project details →</a>
+        </div>
+        <div class="card">
+          <img class="thumb" src="motion-as-language/media/demo.png" alt="Attention links between poses of a robot drawing task">
+          <span class="num">02.2</span>
+          <h3>Robot Motion as a Language</h3>
+          <p>A robot task reads like a sentence: each Panda pose is a word, linked by attention to near and far poses. Transformer-VAE models learn these links to generate whole tasks. Includes an interactive attention explorer.</p>
+          <div><span class="tag">Transformer</span><span class="tag">Attention</span><span class="tag">VAE</span><span class="tag">Interactive demo</span></div>
+          <a class="link" href="motion-as-language/">Project details →</a>
+        </div>
+        <div class="card">
+          <img class="thumb" src="learning-as-a-game/media/demo.png" alt="Live GAN demo: the generator distribution moving onto the demonstrations">
+          <span class="num">02.3</span>
+          <h3>Learning a Task as a Game</h3>
+          <p>An implicit generative model learns a robot task's inner structure from demonstrations alone. A generator and a judge compete until they reach a Nash equilibrium. Includes a live GAN you can train in the browser.</p>
+          <div><span class="tag">GAN</span><span class="tag">Implicit model</span><span class="tag">Nash equilibrium</span><span class="tag">Interactive demo</span></div>
+          <a class="link" href="learning-as-a-game/">Project details →</a>
+        </div>
+        <div class="card">
+          <img class="thumb" src="disentangled-tasks/media/demo.png" alt="SCARA arm drawing a shape set by disentangled latent knobs">
+          <span class="num">02.4</span>
+          <h3>Seeing Tasks Like People Do</h3>
+          <p>People see objects by their factors: shape, size, position, orientation. Computers see pixels. A β-VAE learns those factors on its own, so a robot task can be controlled one factor at a time. Includes an interactive demo with a SCARA arm.</p>
+          <div><span class="tag">β-VAE</span><span class="tag">Disentanglement</span><span class="tag">Interactive demo</span></div>
+          <a class="link" href="disentangled-tasks/">Project details →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="hardware">
+      <div class="eyebrow">03 · Hardware &amp; lab</div>
+      <h2>The lab behind the <em>work</em></h2>
+      <p>The physical robots, embedded controller and computing facility used across my PhD.</p>
+      <div class="cards">
+        <div class="card">
+          <img class="thumb" src="lab-ecosystem/media/ecosystem.png" alt="Robotics lab networked to a high-performance computing facility">
+          <span class="num">03.1</span>
+          <h3>Robotics Lab Ecosystem</h3>
+          <p>A SCARA arm on a custom embedded controller, managed from a ROS 2 workstation and networked to a GPU cluster and shared storage. Demonstrations go in, trained models come back to drive the arm. The platform behind all my PhD robotics work.</p>
+          <div><span class="tag">Embedded</span><span class="tag">ROS 2</span><span class="tag">HPC</span><span class="tag">Networking</span><span class="tag">Interactive diagram</span></div>
+          <a class="link" href="lab-ecosystem/">Project details →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../">Home</a> · <a href="../robotics/">Robotics</a> · <a href="../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,38 @@
+/* Shared styles for thesis-derived project pages: charts, tables, figures, layers. */
+.thesis-link { display:inline-block; margin: .6rem 0 0; padding:.45rem .9rem; border:1px solid #5a48c8; border-radius:999px; color:#5a48c8; text-decoration:none; font-size:.92rem; }
+.thesis-link:hover { background:#f1eefb; }
+.toggle { display:flex; gap:.4rem; flex-wrap:wrap; margin:.8rem 0; }
+.toggle button { border:1px solid #d6d0ec; background:#fff; border-radius:999px; padding:.35rem .85rem; cursor:pointer; font:inherit; color:#3b3754; }
+.toggle button.on { background:#5a48c8; border-color:#5a48c8; color:#fff; }
+.chart { display:grid; gap:.45rem; margin:.8rem 0 1.2rem; }
+.chart .row { display:grid; grid-template-columns: minmax(120px, 220px) 1fr auto; gap:.7rem; align-items:center; font-size:.9rem; }
+.chart .lbl { color:#3b3754; }
+.chart .track { height:12px; background:#ece9f6; border-radius:6px; overflow:hidden; }
+.chart .fill { height:100%; border-radius:6px; }
+.chart .val { color:#6b6880; white-space:nowrap; font-variant-numeric: tabular-nums; }
+.chart .legend { display:flex; gap:1rem; font-size:.85rem; color:#6b6880; }
+.chart .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:.3rem; vertical-align:middle; }
+table.data { width:100%; border-collapse:collapse; font-size:.9rem; margin:.8rem 0 1.2rem; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { border-bottom:1px solid #e3dff0; padding:.45rem .5rem; text-align:right; }
+table.data th:first-child, table.data td:first-child { text-align:left; }
+table.data th { color:#6b6880; font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+table.data tr.hl td { background:#f6f4fc; }
+.fig { margin:1rem 0 1.4rem; }
+.fig img { width:100%; height:auto; border:1px solid #e3dff0; border-radius:10px; background:#fff; display:block; }
+.fig figcaption { font-size:.9rem; color:#6b6880; margin-top:.5rem; }
+.fig.narrow img { max-width: 560px; margin: 0 auto; }
+.note-box { font-size:.92rem; color:#6b6880; border-left:3px solid #d6d0ec; padding:.3rem .9rem; margin:.8rem 0; }
+.layers { display:grid; gap:.45rem; margin:1rem 0 1.4rem; }
+.layer { border:1px solid #d6d0ec; border-radius:10px; padding:.6rem .9rem; display:grid; gap:.1rem; }
+.layer .k { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#6b6880; }
+.layer small { color:#6b6880; }
+.kv { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:.6rem; margin:.8rem 0 1.2rem; }
+.kv div { border:1px solid #e3dff0; border-radius:10px; padding:.6rem .8rem; }
+.kv .k { display:block; font-size:.75rem; color:#6b6880; text-transform:uppercase; letter-spacing:.05em; }
+.kv strong { font-size:1.05rem; }
+.sliders { display:grid; gap:.6rem; margin:.8rem 0; }
+.sliders label { display:grid; grid-template-columns: 170px 1fr 70px; gap:.6rem; align-items:center; font-size:.92rem; }
+.sliders input { width:100%; accent-color:#5a48c8; }
+.sliders output { color:#6b6880; font-variant-numeric: tabular-nums; }
+.eq { font-family: ui-monospace, Menlo, monospace; font-size:.9rem; background:#f6f4fc; border-radius:8px; padding:.6rem .8rem; margin:.4rem 0; overflow-x:auto; }
+@media (max-width:600px){ .chart .row { grid-template-columns: 1fr; } .sliders label { grid-template-columns: 1fr; } }

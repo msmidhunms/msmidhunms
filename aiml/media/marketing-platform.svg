@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="sans-serif">
+  <rect width="640" height="360" fill="#eef6f8"/>
+  <g fill="#fff" stroke="#2f6f8f" stroke-width="2">
+    <rect x="260" y="140" width="120" height="70" rx="12"/>
+    <rect x="60" y="50" width="150" height="50" rx="10"/>
+    <rect x="60" y="130" width="150" height="50" rx="10"/>
+    <rect x="60" y="210" width="150" height="50" rx="10"/>
+    <rect x="60" y="290" width="150" height="50" rx="10"/>
+    <rect x="430" y="50" width="150" height="50" rx="10"/>
+    <rect x="430" y="130" width="150" height="50" rx="10"/>
+    <rect x="430" y="210" width="150" height="50" rx="10"/>
+    <rect x="430" y="290" width="150" height="50" rx="10"/>
+  </g>
+  <g stroke="#2f6f8f" stroke-width="2" fill="none">
+    <path d="M210 75 L260 165"/><path d="M210 155 L260 170"/><path d="M210 235 L260 185"/><path d="M210 315 L260 195"/>
+    <path d="M380 170 L430 75"/><path d="M380 170 L430 155"/><path d="M380 185 L430 235"/><path d="M380 195 L430 315"/>
+  </g>
+  <g fill="#1d3d4d" font-size="18" text-anchor="middle">
+    <text x="135" y="80">SEO</text><text x="135" y="160">Social</text><text x="135" y="240">Paid ads</text><text x="135" y="320">Reputation</text>
+    <text x="500" y="80">Reports</text><text x="500" y="160">Insights</text><text x="500" y="240">Actions</text><text x="500" y="320">Alerts</text>
+    <text x="320" y="170">LLM + RAG</text>
+  </g>
+  <text x="320" y="30" fill="#2f6f8f" font-size="18" text-anchor="middle">One platform, 20 AI features</text>
+</svg>

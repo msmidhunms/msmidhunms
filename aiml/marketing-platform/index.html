@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Marketing Platform | Midhun</title>
+  <meta name="description" content="Case study: an all-in-one digital marketing platform for SEO, social media, paid ads and reputation management, with 20 AI features built on hosted LLMs and retrieval over client data.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← AI/ML</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#shared">Shared AI</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">AI &amp; ML · Company work</div>
+      <h1>All-in-one <em>digital marketing</em></h1>
+      <p class="lead">One platform for SEO, social media, paid advertising and online reputation management, with AI built into every module, so a business can run its whole digital marketing under one roof.</p>
+      <div class="meta" style="justify-content:center;">
+        <span class="tag">LLM applications</span><span class="tag">RAG</span><span class="tag">Vector database</span><span class="tag">Content generation</span><span class="tag">Team leadership</span><span class="tag private">Code private</span>
+      </div>
+    </header>
+
+    <section class="block" id="overview">
+      <div class="eyebrow">01 · Overview</div>
+      <h2>Four disciplines, <em>one platform</em></h2>
+      <p>Businesses usually run search, social, ads and reviews in separate tools, with separate data and a lot of manual writing and checking. This platform brings them together. My team designs and builds the AI features across all four modules as the business needs them, on a shared AI layer that knows each client's brand and data.</p>
+      <div class="glance">
+        <div class="stat"><div class="k">Modules</div><div class="v">4</div><div class="s">SEO, social, ads, reputation</div></div>
+        <div class="stat"><div class="k">AI features</div><div class="v">20</div><div class="s">across modules and shared layer</div></div>
+        <div class="stat"><div class="k">AI stack</div><div class="v">LLM + RAG</div><div class="s">hosted LLM APIs, vector database</div></div>
+        <div class="stat"><div class="k">My role</div><div class="v">AI lead</div><div class="s">team of three engineers</div></div>
+      </div>
+    </section>
+
+    <section class="block" id="features">
+      <div class="eyebrow">02 · Feature explorer</div>
+      <h2>What the AI <em>does</em></h2>
+      <p>Pick a module to see its AI features. Each one is tagged by the kind of work the AI does.</p>
+      <div class="fx" id="fx">
+        <div class="fx-head">
+          <div class="seg" id="fx-tabs"></div>
+          <div class="fx-legend">
+            <span class="fx-chip gen">Generate</span><span class="fx-chip ana">Analyse</span><span class="fx-chip rec">Recommend</span><span class="fx-chip mon">Monitor</span>
+          </div>
+        </div>
+        <p class="fx-intro" id="fx-intro"></p>
+        <div class="fx-grid" id="fx-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">03 · Architecture</div>
+      <h2>How the AI <em>layer</em> works</h2>
+      <p>Every module draws on the same AI core: retrieval over each client's data, the client's brand voice, and hosted LLMs. Pick a module to see its path. This is a simplified view.</p>
+      <div class="arch" id="mp-arch">
+        <div class="arch-tabs" role="tablist" aria-label="Module"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="shared">
+      <div class="eyebrow">04 · Shared AI layer</div>
+      <h2>Built once, <em>used everywhere</em></h2>
+      <div class="features">
+        <div class="feature"><span class="k">Context</span><h3>Retrieval over client data (RAG)</h3><p>Client information is stored in a vector database and retrieved at generation time, so outputs are grounded in each client's own business rather than generic text.</p></div>
+        <div class="feature"><span class="k">Consistency</span><h3>Brand voice and guidelines</h3><p>Each client's tone and rules are applied to everything the AI writes, from blog posts and captions to ad copy and review replies.</p></div>
+        <div class="feature"><span class="k">Planning</span><h3>AI content calendar</h3><p>Plans articles and posts over time, tying SEO and social output into one schedule.</p></div>
+        <div class="feature"><span class="k">Models</span><h3>Hosted LLM APIs</h3><p>Generation and analysis run on hosted large language models, behind one layer that every module calls.</p></div>
+      </div>
+    </section>
+
+    <section class="block" id="notes">
+      <div class="eyebrow">05 · Note</div>
+      <p>This is a company product, so the code is proprietary and the product isn't named here. This page describes the platform's AI features and my part in building them.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script>
+    (function () {
+      var DATA = {
+        seo: { label: 'SEO', intro: 'Helping clients rank: what to write, what to fix and how they compare.', items: [
+          ['gen', 'SEO content writing', 'Drafts search-optimised articles with meta titles and descriptions.'],
+          ['ana', 'Keyword research & clustering', 'Suggests keywords and groups them by topic and intent to plan content.'],
+          ['rec', 'Site audit with AI fixes', 'Finds on-page issues and suggests how to fix each one.'],
+          ['ana', 'Competitor & SERP analysis', 'Compares the client with ranking competitors and highlights content gaps.'],
+          ['ana', 'Backlink analysis', 'Evaluates the backlink profile and suggests linking opportunities.'] ] },
+        social: { label: 'Social media', intro: 'Creating, scheduling and learning from social posts.', items: [
+          ['gen', 'Post & caption generation', 'Writes platform-specific posts, captions and hashtags.'],
+          ['gen', 'Creative generation', 'Generates images and visuals to go with posts.'],
+          ['rec', 'Best-time scheduling', 'Recommends when to publish for each audience.'],
+          ['ana', 'Engagement insights', 'Summarises how posts performed and what to do next.'],
+          ['mon', 'Social listening & trends', 'Surfaces trending topics and hashtags relevant to the client.'] ] },
+        ads: { label: 'Paid ads', intro: 'Writing, targeting and reporting on paid campaigns.', items: [
+          ['gen', 'Ad copy generation', 'Writes headlines and descriptions for ad campaigns.'],
+          ['gen', 'Ad creative generation', 'Produces images for ad creatives.'],
+          ['rec', 'Audience targeting suggestions', 'Suggests audience segments to target.'],
+          ['ana', 'Performance reporting', 'Turns campaign results into plain-language summaries.'] ] },
+        rep: { label: 'Reputation', intro: 'Watching what people say about a brand and responding well.', items: [
+          ['mon', 'Brand mention monitoring', 'Tracks mentions of the brand across the web.'],
+          ['ana', 'Review sentiment analysis', 'Classifies reviews and mentions by sentiment.'],
+          ['mon', 'Negative spike alerts', 'Flags sudden increases in negative sentiment early.'],
+          ['gen', 'AI review replies', 'Drafts on-brand responses to customer reviews.'] ] },
+        shared: { label: 'Shared', intro: 'Cross-module features every module builds on.', items: [
+          ['gen', 'Brand voice & guidelines', 'Keeps everything the AI writes in each client\'s tone and rules.'],
+          ['rec', 'Content calendar planning', 'Plans articles and posts over time across SEO and social.'] ] }
+      };
+      var NAME = { gen: 'Generate', ana: 'Analyse', rec: 'Recommend', mon: 'Monitor' };
+      var tabs = document.getElementById('fx-tabs'), grid = document.getElementById('fx-grid'), intro = document.getElementById('fx-intro');
+      function show(k) {
+        tabs.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.k === k); });
+        intro.textContent = DATA[k].intro;
+        grid.innerHTML = '';
+        DATA[k].items.forEach(function (it, i) {
+          var c = document.createElement('div'); c.className = 'fx-card'; c.style.animationDelay = (i * 50) + 'ms';
+          var chip = document.createElement('span'); chip.className = 'fx-chip ' + it[0]; chip.textContent = NAME[it[0]];
+          var h = document.createElement('h3'); h.textContent = it[1];
+          var p = document.createElement('p'); p.textContent = it[2];
+          c.appendChild(chip); c.appendChild(h); c.appendChild(p); grid.appendChild(c);
+        });
+      }
+      Object.keys(DATA).forEach(function (k) {
+        var b = document.createElement('button'); b.type = 'button'; b.dataset.k = k;
+        b.textContent = DATA[k].label + ' · ' + DATA[k].items.length;
+        b.onclick = function () { show(k); if (window.mpArch && k !== 'shared') window.mpArch.setMode(k); };
+        tabs.appendChild(b);
+      });
+      show('seo');
+    })();
+  </script>
+  <script src="../../assets/arch.js"></script>
+  <script>
+    window.mpArch = Arch.mount(document.getElementById('mp-arch'), {
+      id: 'mp', width: 1000, height: 470, label: 'Digital marketing platform AI architecture',
+      columns: [
+        { x: 40, w: 200, label: 'Data in' }, { x: 300, w: 220, label: 'AI core' },
+        { x: 580, w: 190, label: 'Modules' }, { x: 830, w: 150, label: 'Outputs' }
+      ],
+      modes: [
+        { id: 'all', label: 'All modules', desc: 'Client data is indexed for retrieval, web signals come in from search, social and review sources, and the shared AI core serves all four modules. Each module turns AI output into content, insights or alerts.' },
+        { id: 'seo', label: 'SEO', desc: 'Search results and competitor pages feed analysis; retrieval adds the client\'s site and past content. The LLM writes SEO articles, clusters keywords, and explains audit, competitor and backlink findings.' },
+        { id: 'social', label: 'Social', desc: 'Trends and hashtags feed social listening; brand voice shapes posts, captions and creatives. Engagement data becomes insights, and recommended posting times go into the content calendar.' },
+        { id: 'ads', label: 'Paid ads', desc: 'Campaign data and the client\'s brand go into ad copy and creative generation, audience suggestions and plain-language performance reports.' },
+        { id: 'rep', label: 'Reputation', desc: 'Reviews and brand mentions are monitored and classified by sentiment. Spikes in negative sentiment raise alerts, and the LLM drafts on-brand replies.' }
+      ],
+      nodes: [
+        { id: 'client', x: 40, y: 64, w: 200, h: 130, title: 'Client data', sub: 'per client',
+          lines: ['Website & content', 'Social & ad accounts', 'Brand guidelines'],
+          info: { body: 'Each client\'s own material: their site, past content, account data and brand rules.' } },
+        { id: 'web', x: 40, y: 230, w: 200, h: 130, title: 'Web signals', sub: 'external',
+          lines: ['Search results', 'Trends & hashtags', 'Reviews & mentions'],
+          info: { body: 'Outside data the modules analyse: search results and competitors, social trends, and reviews and brand mentions.' } },
+        { id: 'rag', x: 300, y: 64, w: 220, h: 100, title: 'Retrieval (RAG)', sub: 'vector database', kind: 'core',
+          lines: ['Client knowledge, retrieved', 'at generation time'],
+          info: { body: 'Client data is embedded into a vector database and retrieved for each request, so outputs are grounded in the client\'s own business.' } },
+        { id: 'llm', x: 300, y: 194, w: 220, h: 110, title: 'LLM layer', sub: 'hosted LLM APIs', kind: 'core',
+          lines: ['Generate · analyse', 'summarise · recommend'],
+          info: { body: 'One layer over hosted large language models that every module calls for writing and analysis.' } },
+        { id: 'brand', x: 300, y: 334, w: 220, h: 80, title: 'Brand voice', sub: 'guidelines', kind: 'core',
+          info: { body: 'Applies each client\'s tone and rules to everything the AI writes.' } },
+        { id: 'seo', x: 580, y: 64, w: 190, h: 80, title: 'SEO', sub: '5 AI features', modes: ['all', 'seo'],
+          info: { facts: ['SEO content writing', 'Keyword research & clustering', 'Site audit with AI fixes', 'Competitor & SERP analysis', 'Backlink analysis'] } },
+        { id: 'social', x: 580, y: 160, w: 190, h: 80, title: 'Social media', sub: '5 AI features', modes: ['all', 'social'],
+          info: { facts: ['Post & caption generation', 'Creative generation', 'Best-time scheduling', 'Engagement insights', 'Social listening & trends'] } },
+        { id: 'ads', x: 580, y: 256, w: 190, h: 80, title: 'Paid ads', sub: '4 AI features', modes: ['all', 'ads'],
+          info: { facts: ['Ad copy generation', 'Ad creative generation', 'Audience targeting suggestions', 'Performance reporting'] } },
+        { id: 'rep', x: 580, y: 352, w: 190, h: 80, title: 'Reputation', sub: '4 AI features', modes: ['all', 'rep'],
+          info: { facts: ['Brand mention monitoring', 'Review sentiment analysis', 'Negative spike alerts', 'AI review replies'] } },
+        { id: 'content', x: 830, y: 64, w: 150, h: 130, title: 'Content', sub: 'generated',
+          lines: ['Articles', 'Posts & creatives', 'Ad copy', 'Review replies'],
+          info: { body: 'Everything the AI writes or draws, ready for review and publishing.' } },
+        { id: 'insight', x: 830, y: 220, w: 150, h: 110, title: 'Insights', sub: 'analysis',
+          lines: ['Audits & reports', 'Alerts'],
+          info: { body: 'Findings, summaries and alerts for the marketing team.' } },
+        { id: 'cal', x: 830, y: 356, w: 150, h: 76, title: 'Calendar', sub: 'planning',
+          info: { body: 'An AI-planned schedule for articles and posts.' } }
+      ],
+      edges: [
+        { from: 'client', to: 'rag', label: 'indexed', lt: 0.4 },
+        { from: 'web', to: 'llm', label: 'signals', lt: 0.4 },
+        { from: 'rag', to: 'llm', fs: 'b', ts: 't', label: 'context', lx: 30, ly: 8 },
+        { from: 'brand', to: 'llm', fs: 't', ts: 'b', label: 'tone', lx: 24, ly: 8 },
+        { from: 'llm', to: 'seo' }, { from: 'llm', to: 'social' }, { from: 'llm', to: 'ads' }, { from: 'llm', to: 'rep' },
+        { from: 'seo', to: 'content' }, { from: 'seo', to: 'insight' },
+        { from: 'social', to: 'content' }, { from: 'social', to: 'insight' }, { from: 'social', to: 'cal' },
+        { from: 'ads', to: 'content' }, { from: 'ads', to: 'insight' },
+        { from: 'rep', to: 'content' }, { from: 'rep', to: 'insight' },
+        { from: 'seo', to: 'cal', modes: ['seo'] }
+      ]
+    });
+  </script>
+</body>
+</html>

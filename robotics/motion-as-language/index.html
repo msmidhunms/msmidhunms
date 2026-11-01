@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Motion as Language | Midhun</title>
+  <meta name="description" content="A robot task read like a sentence: each pose is a word, and attention links it to near and far poses. How Transformer-VAE models learn robot tasks, with an interactive attention explorer.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .panel { border:1px solid var(--border); border-radius:14px; background:var(--surface); padding:1rem 1.1rem; margin-top:1rem; }
+    .panel h3 { margin:0 0 .3rem; font-size:1rem; }
+    .panel .hint { color:var(--muted); font-size:.88rem; margin:0 0 .6rem; }
+    .sentence { position:relative; }
+    .sentence svg { width:100%; height:70px; display:block; }
+    .words { display:flex; flex-wrap:wrap; gap:.35rem; }
+    .words button { border:1px solid #d6d0ec; border-radius:8px; padding:.35rem .6rem; font:inherit; cursor:pointer; background:#fff; color:#2a2640; transition: background .15s; }
+    .words button.sel { outline:2px solid var(--accent); }
+    .robot { display:grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr); gap:1rem; align-items:start; }
+    .robot canvas { width:100%; height:auto; display:block; border-radius:10px; background:#f7f6fc; }
+    .tokens { display:grid; grid-template-columns: repeat(auto-fill, minmax(14px, 1fr)); gap:3px; margin-top:.8rem; }
+    .tokens span { height:22px; border-radius:4px; background:#ebe8f6; cursor:pointer; position:relative; }
+    .tokens span.sel { outline:2px solid #1c1b24; }
+    .tokens span.up::after { content:''; position:absolute; left:3px; right:3px; bottom:3px; height:2px; background:#9b96b5; border-radius:2px; }
+    .word-card { border:1px solid var(--border); border-radius:10px; padding:.7rem .8rem; margin-top:.8rem; }
+    .word-card .k { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .glyph { display:flex; align-items:flex-end; gap:5px; height:56px; margin:.5rem 0 .2rem; }
+    .glyph i { flex:1; background:var(--accent); border-radius:3px 3px 0 0; opacity:.85; }
+    .glyph-l { display:flex; gap:5px; font-family:var(--mono); font-size:.7rem; color:var(--muted); }
+    .glyph-l span { flex:1; text-align:center; }
+    .ctrls { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.8rem; }
+    .ctrls button { border:1px solid #d6d0ec; background:#fff; border-radius:999px; padding:.35rem .9rem; cursor:pointer; font:inherit; color:#3b3754; }
+    .ctrls button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .map canvas { width:100%; max-width:300px; height:auto; display:block; border-radius:8px; image-rendering: pixelated; }
+    .why { display:grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap:.8rem; margin-top:1rem; }
+    .why div { border:1px solid var(--border); border-radius:12px; padding:.9rem 1rem; background:var(--surface); }
+    .why h3 { margin:0 0 .35rem; font-size:1rem; }
+    .why p { margin:0; font-size:.92rem; }
+    .analogy { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.95rem; }
+    .analogy th, .analogy td { text-align:left; padding:.55rem .7rem; border-bottom:1px solid var(--border); }
+    .analogy th { color:var(--muted); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+    @media (max-width: 760px) { .robot { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#idea">The idea</a></li>
+        <li><a href="#explore">Explore</a></li>
+        <li><a href="#model">The model</a></li>
+        <li><a href="#why">Why it fits</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Generative models</div>
+      <h1>Robot motion as a <em>language</em></h1>
+      <p class="lead">A complete robot task reads like a sentence. Each pose is a word, and every word depends on others, some next to it and some far away. Transformers learn exactly these links through attention, so I used them to learn robot tasks.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">Transformer</span><span class="tag">Attention</span><span class="tag">VAE</span><span class="tag">Franka Emika Panda</span><span class="tag">Interactive demo</span></div>
+      <a class="thesis-link" href="../../assets/thesis/chapter-6.pdf" target="_blank" rel="noopener">Read the thesis chapter (PDF) ↗</a>
+    </header>
+
+    <section class="block" id="idea">
+      <div class="eyebrow">01 · The idea</div>
+      <h2>Words in a sentence, <em>poses</em> in a task</h2>
+      <p>In a sentence, a word's meaning depends on other words. Some are right beside it. Others are far away: in "draw the door below it", the word <em>it</em> points back to something said earlier. Transformers handle this with <strong>attention</strong>: every word looks at every other word and decides how much each one matters.</p>
+      <p>A robot task works the same way. On a Franka Emika Panda, each pose is described by its 7 joint angles. That vector is the robot's <em>word</em>. A task is a long sequence of these poses, and they depend on each other. Neighbouring poses must flow smoothly, and distant ones must agree: a drawn square has to close where it started, and a roof has to meet the corners of the walls. When all of these links hold, the motion is in harmony.</p>
+      <table class="analogy">
+        <thead><tr><th>Language</th><th>Robot task</th></tr></thead>
+        <tbody>
+          <tr><td>Word</td><td>Pose: 7 joint angles of the Panda at one moment</td></tr>
+          <tr><td>Sentence</td><td>A complete task: the sequence of poses from start to finish</td></tr>
+          <tr><td>Grammar between nearby words</td><td>Smooth motion between neighbouring poses</td></tr>
+          <tr><td>References to distant words</td><td>Links to distant poses: closing a shape, returning to a corner, lifting the pen between strokes</td></tr>
+          <tr><td>Meaning of the whole sentence</td><td>The task itself, which the model compresses into a latent code</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block" id="explore">
+      <div class="eyebrow">02 · Explore</div>
+      <h2>Attention, in a sentence and in a <em>task</em></h2>
+
+      <div class="panel">
+        <h3>In a sentence</h3>
+        <p class="hint">Click a word to see which other words it attends to. Darker means stronger.</p>
+        <div class="sentence"><svg id="arcs" viewBox="0 0 100 70" preserveAspectRatio="none" aria-hidden="true"></svg><div class="words" id="words"></div></div>
+      </div>
+
+      <div class="panel">
+        <h3>In a robot task</h3>
+        <p class="hint">The robot draws a house in three strokes, with the pen lifted in between. Each square in the strip is one pose. Click a pose, or press Play to let the pen move, and see which poses it attends to.</p>
+        <div class="robot">
+          <div>
+            <canvas id="task" width="620" height="440" aria-label="Drawing task with attention links from the selected pose"></canvas>
+            <div class="tokens" id="tokens" aria-label="Pose sequence"></div>
+            <div class="ctrls"><button type="button" class="primary" id="play">▶ Play</button><button type="button" id="prev">← Previous pose</button><button type="button" id="next">Next pose →</button></div>
+          </div>
+          <div>
+            <div class="word-card">
+              <span class="k">Selected pose: the "word"</span>
+              <strong id="pose-name">Pose 1</strong>
+              <div class="glyph" id="glyph"></div>
+              <div class="glyph-l"><span>q1</span><span>q2</span><span>q3</span><span>q4</span><span>q5</span><span>q6</span><span>q7</span></div>
+              <p class="hint" style="margin:.5rem 0 0;" id="pose-note"></p>
+            </div>
+            <div class="word-card map">
+              <span class="k">Attention map: every pose × every pose</span>
+              <canvas id="map" width="60" height="60" aria-label="Attention map"></canvas>
+              <p class="hint" style="margin:.5rem 0 0;">Row = the pose that is looking, column = the pose it looks at. The bright diagonal is local smoothness. The off-diagonal spots are the long-range links.</p>
+            </div>
+          </div>
+        </div>
+        <p class="note" style="margin-top:.8rem;">The attention weights and joint bars here are illustrative, built to show the pattern. A trained model learns its own weights from the demonstrations.</p>
+      </div>
+    </section>
+
+    <section class="block" id="model">
+      <div class="eyebrow">03 · The model</div>
+      <h2>A Transformer that <em>compresses and rebuilds</em> a task</h2>
+      <p>The Transformer-VAE reads the whole pose sequence at once. Each pose is embedded and given a positional encoding, so the model knows its place in time. Encoder layers apply multi-head attention, so different heads can track different kinds of link. The result is squeezed into a short latent code z, a summary of the whole task. The decoder attends to z and rebuilds the pose sequence. Sampling a new z, with a task label, generates a new trajectory for that task.</p>
+      <p>The modified version improves two things. It gives attention a wider working space than the latent code, with projection layers in between. And it judges the output the way the robot experiences it: forward kinematics turns joint angles into the position and orientation of every link, so the training loss checks where the arm actually is, not just its joint numbers. Switch between the two versions below.</p>
+      <div class="arch" id="tr-arch"><div class="arch-tabs" role="tablist" aria-label="Version"></div><div class="arch-body"><div class="arch-stage"></div><aside class="arch-info" aria-live="polite"></aside></div></div>
+    </section>
+
+    <section class="block" id="why">
+      <div class="eyebrow">04 · Why it fits</div>
+      <h2>Why attention suits <em>robot tasks</em></h2>
+      <div class="why">
+        <div><h3>Long-range links</h3><p>A recurrent model passes information step by step and forgets over long tasks. Attention connects the last pose to the first directly.</p></div>
+        <div><h3>Whole task at once</h3><p>All poses are processed in parallel, so the model sees the full shape of the task, not just the next step.</p></div>
+        <div><h3>Several kinds of link</h3><p>Multiple heads can track smoothness, shape closure and stroke structure at the same time.</p></div>
+        <div><h3>New tasks from a code</h3><p>The latent space holds the meaning of the task, so new, valid motions come from sampling or moving through it.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script src="../../assets/thesis.js"></script>
+  <script>
+  (function () {
+    const shade = w => 'rgba(90,72,200,' + (0.08 + 0.85 * w).toFixed(2) + ')';
+
+    // ---------- sentence ----------
+    const W = ['Lift', 'the', 'pen', 'after', 'the', 'roof', ',', 'then', 'draw', 'the', 'door', 'below', 'it'];
+    const LINKS = { 0: { 2: 0.9 }, 2: { 0: 0.8 }, 3: { 5: 0.7 }, 5: { 3: 0.5, 0: 0.3 }, 7: { 3: 0.7 }, 8: { 10: 0.8, 0: 0.3 }, 10: { 8: 0.7, 11: 0.5 }, 11: { 10: 0.6, 12: 0.6 }, 12: { 5: 0.95, 11: 0.4 } };
+    function sentAtt(i) {
+      const w = W.map((_, j) => Math.exp(-Math.abs(i - j) / 0.9) * 0.45 + ((LINKS[i] || {})[j] || 0));
+      const m = Math.max(...w); return w.map(v => v / m);
+    }
+    const words = document.getElementById('words'), arcs = document.getElementById('arcs');
+    words.innerHTML = W.map((w, i) => '<button type="button" data-i="' + i + '">' + w + '</button>').join('');
+    const btns = [...words.querySelectorAll('button')];
+    function pickWord(i) {
+      const a = sentAtt(i), box = words.getBoundingClientRect();
+      btns.forEach((b, j) => { b.classList.toggle('sel', j === i); b.style.background = j === i ? 'var(--surface)' : shade(a[j] * 0.7); b.style.color = a[j] > 0.6 && j !== i ? '#fff' : 'var(--text)'; });
+      const cx = j => { const r = btns[j].getBoundingClientRect(); return ((r.left + r.width / 2) - box.left) / box.width * 100; };
+      const rowTop = btns[i].getBoundingClientRect().top;
+      let s = '';
+      a.forEach((v, j) => {
+        if (j === i || v < 0.35 || Math.abs(btns[j].getBoundingClientRect().top - rowTop) > 4) return;
+        const x1 = cx(i), x2 = cx(j), h = 10 + Math.min(55, Math.abs(x2 - x1) * 0.9);
+        s += '<path d="M' + x1 + ',70 Q' + (x1 + x2) / 2 + ',' + (70 - h * 1.6) + ' ' + x2 + ',70" fill="none" stroke="#5a48c8" stroke-opacity="' + v.toFixed(2) + '" stroke-width="0.6" vector-effect="non-scaling-stroke" style="stroke-width:' + (1 + v * 3) + 'px"/>';
+      });
+      arcs.innerHTML = s;
+    }
+    btns.forEach(b => b.addEventListener('click', () => pickWord(+b.dataset.i)));
+    pickWord(12);
+    window.addEventListener('resize', () => { const s = words.querySelector('.sel'); if (s) pickWord(+s.dataset.i); });
+
+    // ---------- robot task: a house in three strokes ----------
+    const P = []; // {x, y, stroke, up}
+    function seg(a, b, n, stroke) { for (let k = 0; k < n; k++) { const t = k / n; P.push({ x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, stroke, up: false }); } }
+    function lift(a, b) { for (let k = 1; k <= 2; k++) { const t = k / 3; P.push({ x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t, stroke: -1, up: true }); } }
+    const BL = [-1, -1], BR = [1, -1], TR = [1, 0.4], TL = [-1, 0.4], AP = [0, 1.25], D0 = [-0.3, -1], D1 = [-0.3, -0.25], D2 = [0.3, -0.25], D3 = [0.3, -1];
+    seg(BL, BR, 5, 0); seg(BR, TR, 4, 0); seg(TR, TL, 5, 0); seg(TL, BL, 4, 0); P.push({ x: BL[0], y: BL[1], stroke: 0, up: false });
+    lift(BL, TL);
+    seg(TL, AP, 4, 1); seg(AP, TR, 4, 1); P.push({ x: TR[0], y: TR[1], stroke: 1, up: false });
+    lift(TR, D0);
+    seg(D0, D1, 3, 2); seg(D1, D2, 3, 2); seg(D2, D3, 3, 2); P.push({ x: D3[0], y: D3[1], stroke: 2, up: false });
+    const N = P.length;
+    const firstOf = s => P.findIndex(p => p.stroke === s), lastOf = s => { for (let i = N - 1; i >= 0; i--) if (P[i].stroke === s) return i; };
+    function att(i) {
+      const w = P.map((q, j) => {
+        let v = Math.exp(-Math.abs(i - j) / 1.6);
+        const d = Math.hypot(P[i].x - q.x, P[i].y - q.y);
+        if (Math.abs(i - j) > 3) v += 0.85 * Math.exp(-(d * d) / 0.02);
+        if (P[i].stroke >= 0 && q.stroke === P[i].stroke && (j === firstOf(q.stroke) || j === lastOf(q.stroke))) v += 0.25;
+        if (P[i].up && !q.up && (j === lastOf(P[i - 1] && P[i - 1].stroke >= 0 ? P[i - 1].stroke : 0))) v += 0.4;
+        return v;
+      });
+      const m = Math.max(...w); return w.map(v => v / m);
+    }
+    const A = P.map((_, i) => att(i));
+
+    // canvas
+    const cv = document.getElementById('task'), ctx = cv.getContext('2d'), CW = cv.width, CH = cv.height;
+    const X = x => CW / 2 + x * 210, Y = y => CH / 2 + 30 - y * 150;
+    let sel = 0, playing = false;
+    function draw() {
+      ctx.clearRect(0, 0, CW, CH);
+      // full path (faint)
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 1; i < N; i++) {
+        ctx.beginPath(); ctx.moveTo(X(P[i - 1].x), Y(P[i - 1].y)); ctx.lineTo(X(P[i].x), Y(P[i].y));
+        const up = P[i].up || P[i - 1].up;
+        ctx.setLineDash(up ? [4, 5] : []); ctx.strokeStyle = up ? '#c9c4dd' : '#d8d4ea'; ctx.lineWidth = up ? 1.5 : 4; ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      // drawn so far
+      for (let i = 1; i <= sel; i++) {
+        if (P[i].up || P[i - 1].up) continue;
+        ctx.beginPath(); ctx.moveTo(X(P[i - 1].x), Y(P[i - 1].y)); ctx.lineTo(X(P[i].x), Y(P[i].y)); ctx.strokeStyle = '#3b3754'; ctx.lineWidth = 4; ctx.stroke();
+      }
+      // attention links
+      const a = A[sel];
+      a.forEach((v, j) => {
+        if (j === sel || v < 0.12) return;
+        const x1 = X(P[sel].x), y1 = Y(P[sel].y), x2 = X(P[j].x), y2 = Y(P[j].y);
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - Math.min(80, Math.abs(sel - j) * 3);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo(mx, my, x2, y2);
+        ctx.strokeStyle = 'rgba(217,130,43,' + (v * 0.9).toFixed(2) + ')'; ctx.lineWidth = 1 + v * 3; ctx.stroke();
+      });
+      // poses
+      P.forEach((p, j) => {
+        ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), j === sel ? 9 : 4 + a[j] * 4, 0, 2 * Math.PI);
+        ctx.fillStyle = j === sel ? '#1c1b24' : shade(a[j]); ctx.fill();
+      });
+      ctx.fillStyle = '#6b6880'; ctx.font = '13px system-ui, sans-serif';
+      ctx.fillText('Pose ' + (sel + 1) + ' of ' + N + (P[sel].up ? ' · pen lifted' : ' · stroke ' + (P[sel].stroke + 1) + ' of 3'), 14, 22);
+      // tokens
+      toks.forEach((t, j) => { t.style.background = j === sel ? '#1c1b24' : shade(a[j]); t.classList.toggle('sel', j === sel); });
+      // word card
+      document.getElementById('pose-name').textContent = 'Pose ' + (sel + 1) + (P[sel].up ? ' (pen lifted)' : '');
+      const q = [0.5 + 0.4 * P[sel].x, 0.55 + 0.3 * P[sel].y, 0.5 + 0.25 * Math.sin(P[sel].x * 2), 0.35 + 0.3 * (1 - P[sel].y) / 2.3, 0.5 + 0.2 * Math.cos(P[sel].y * 2), 0.6 + 0.25 * P[sel].x * P[sel].y / 1.3, P[sel].up ? 0.85 : 0.45];
+      document.getElementById('glyph').innerHTML = q.map(v => '<i style="height:' + Math.round(Math.max(0.08, Math.min(1, v)) * 100) + '%"></i>').join('');
+      const far = a.map((v, j) => [v, j]).filter(([v, j]) => Math.abs(j - sel) > 3 && v > 0.4).map(([, j]) => j + 1);
+      document.getElementById('pose-note').textContent = far.length ? 'Besides its neighbours, this pose attends to far-away pose' + (far.length > 1 ? 's ' : ' ') + far.join(', ') + ', where the drawing has to meet up.' : 'This pose mostly attends to its neighbours, keeping the motion smooth.';
+      // map
+      const m = document.getElementById('map').getContext('2d'), mc = m.canvas; mc.width = N; mc.height = N;
+      const img = m.createImageData(N, N);
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        const v = A[r][c], k = (r * N + c) * 4, hl = r === sel;
+        const t = hl ? 0.3 + 0.7 * v : v; img.data[k] = hl ? 255 - 38 * t : 255 - 165 * t; img.data[k + 1] = hl ? 255 - 125 * t : 255 - 183 * t; img.data[k + 2] = hl ? 255 - 212 * t : 255 - 55 * t; img.data[k + 3] = 255;
+      }
+      m.putImageData(img, 0, 0);
+    }
+    const tokEl = document.getElementById('tokens');
+    tokEl.innerHTML = P.map((p, j) => '<span title="Pose ' + (j + 1) + '"' + (p.up ? ' class="up"' : '') + ' data-i="' + j + '"></span>').join('');
+    const toks = [...tokEl.querySelectorAll('span')];
+    toks.forEach(t => t.addEventListener('click', () => { sel = +t.dataset.i; draw(); }));
+    cv.addEventListener('click', e => {
+      const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) * CW / r.width, y = (e.clientY - r.top) * CH / r.height;
+      let best = 0, bd = 1e9; P.forEach((p, j) => { const d = Math.hypot(X(p.x) - x, Y(p.y) - y); if (d < bd) { bd = d; best = j; } }); sel = best; draw();
+    });
+    document.getElementById('prev').addEventListener('click', () => { sel = (sel - 1 + N) % N; draw(); });
+    document.getElementById('next').addEventListener('click', () => { sel = (sel + 1) % N; draw(); });
+    let timer = null; const playBtn = document.getElementById('play');
+    playBtn.addEventListener('click', function () {
+      playing = !playing; this.textContent = playing ? '❚❚ Pause' : '▶ Play';
+      if (playing) timer = setInterval(() => { sel = (sel + 1) % N; draw(); }, 280); else clearInterval(timer);
+    });
+    sel = 18; draw();
+
+    // ---------- architecture ----------
+    Arch.mount(document.querySelector('#tr-arch'), {
+      id: 'tr', width: 1000, height: 420, label: 'Transformer-VAE for robot tasks',
+      columns: [ {x:40,w:200,label:'Poses in'}, {x:290,w:240,label:'Encoder ×N'}, {x:580,w:170,label:'Task code'}, {x:800,w:180,label:'Decoder ×N'} ],
+      modes: [ {id:'base', label:'Transformer-VAE', desc:'Each pose (7 joint angles) is embedded, a positional encoding marks its place in time, and encoder layers apply multi-head self-attention. The encoder output gives μ and σ for the task code z. The decoder attends to z and rebuilds the pose sequence.'},
+               {id:'mod', label:'Modified Transformer-VAE', desc:'Attention works in a wider space than the task code, with projection layers between them. The loss uses forward kinematics, so it checks the position and orientation of every link, not just the joint numbers.'} ],
+      nodes: [
+        {id:'in', x:40, y:60, w:200, h:90, title:'Pose tokens', sub:'7 joints × T steps', info:{body:'Each pose of the Panda is one token, like a word. A positional encoding adds its place in the sequence, and the task label is added as context.'}},
+        {id:'enc', x:290, y:60, w:240, h:200, title:'Encoder layers', sub:'multi-head self-attention', lines:['Every pose attends to every pose','Several heads, several kinds of link','Feed-forward, residual, layer norm'], info:{body:'Self-attention lets each pose gather information from near and far poses in one step.'}},
+        {id:'proj', x:290, y:290, w:240, h:70, title:'Projection down', sub:'wide hidden space → code', modes:['mod'], info:{body:'Lets attention use a wider space than the task code, then compresses the result.'}},
+        {id:'z', x:580, y:150, w:170, h:100, title:'z', sub:'task code', kind:'core', info:{body:'A short code that summarises the whole task, like the meaning of a sentence. New codes give new trajectories.'}},
+        {id:'up', x:580, y:290, w:170, h:70, title:'Projection up', sub:'code → hidden space', modes:['mod'], info:{body:'Expands the code back to the wider space for the decoder.'}},
+        {id:'dec', x:800, y:60, w:180, h:200, title:'Decoder layers', sub:'attention to the code', lines:['Cross-attention to z','Rebuilds the pose sequence'], info:{body:'The decoder attends to the task code and produces the joint angles for every step.'}},
+        {id:'loss', x:800, y:290, w:180, h:70, title:'Training check', sub:'joints + link poses', info:{body:'Base model: joint angles. Modified model: also the position and orientation of each link from forward kinematics.'}}
+      ],
+      edges: [
+        {from:'in', to:'enc', label:'tokens', lt:0.5},
+        {from:'enc', to:'z', modes:['base'], label:'μ, σ', lt:0.5},
+        {from:'enc', to:'proj', modes:['mod'], label:'', lt:0.5},
+        {from:'proj', to:'z', modes:['mod'], label:'μ, σ', lt:0.5},
+        {from:'z', to:'dec', modes:['base'], label:'memory', lt:0.5},
+        {from:'z', to:'up', modes:['mod'], label:'', lt:0.5},
+        {from:'up', to:'dec', modes:['mod'], label:'', lt:0.5},
+        {from:'dec', to:'loss', label:'', lt:0.5}
+      ]
+    });
+  })();
+  </script>
+</body>
+</html>

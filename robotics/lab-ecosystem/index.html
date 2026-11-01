@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robotics Lab Ecosystem | Midhun</title>
+  <meta name="description" content="A SCARA arm with a custom embedded controller, networked to a robot workstation and a GPU computing facility: the lab ecosystem behind every robotics project in my PhD.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .enc { margin-top: 1rem; }
+    .enc-slider { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; color: var(--muted, #6b6880); }
+    .enc-slider input { flex: 1; min-width: 180px; accent-color: #5a48c8; }
+    .enc-out { display: flex; gap: 2rem; margin-top: .8rem; flex-wrap: wrap; }
+    .enc-out .k { display: block; font-size: .8rem; color: #6b6880; text-transform: uppercase; letter-spacing: .05em; }
+    .enc-out strong { font-size: 1.6rem; }
+    #enc-svg { width: 100%; height: auto; background: #fff; border: 1px solid #e3dff0; border-radius: 10px; margin-top: .8rem; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; margin: 1.2rem 0; }
+    .gallery figure { margin: 0; }
+    .gallery img { width: 100%; height: auto; border-radius: 10px; border: 1px solid #e3dff0; display: block; }
+    .gallery figcaption { font-size: .9rem; color: #6b6880; margin-top: .5rem; }
+    .spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .7rem; }
+    .spec div { border: 1px solid #e3dff0; border-radius: 10px; padding: .7rem .9rem; }
+    .spec .k { display: block; font-size: .78rem; color: #6b6880; text-transform: uppercase; letter-spacing: .05em; }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#ecosystem">Ecosystem</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#encoder">Encoder demo</a></li>
+        <li><a href="#hardware">Hardware</a></li>
+        <li><a href="#cad">3D model</a></li>
+        <li><a href="#firmware">Firmware</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Hardware, embedded &amp; infrastructure</div>
+      <h1>A connected <em>robotics lab</em></h1>
+      <p class="lead">A SCARA arm driven by a custom embedded controller, managed from a ROS workstation and networked to a high-performance computing facility. The robot is part of one ecosystem: it records demonstrations, the cluster trains models on them, and the trained models come back to drive the arm. It served every robotics project in my PhD.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">SCARA</span><span class="tag">Embedded controller</span><span class="tag">ROS 2</span><span class="tag">HPC</span><span class="tag">Networking</span><span class="tag">Interactive diagram</span></div>
+    </header>
+
+    <section class="block" id="ecosystem">
+      <div class="eyebrow">01 · Ecosystem</div>
+      <h2>One network from the robot to the <em>GPU cluster</em></h2>
+      <p>The robotics lab, the computing facility and the teaching labs share one Ethernet network. In the robotics lab, a workstation runs ROS and talks to the embedded controller, which drives the robots. Through the switch and router, it reaches network storage and the compute cluster, where models are trained. A management workstation looks after the cluster, and students and researchers use the same compute from the computer labs.</p>
+      <figure class="fig"><img src="media/ecosystem.png" alt="Lab network: robotics lab with robots, embedded controller and robot workstation, connected by an Ethernet switch and router to network storage, compute infrastructure and a management workstation, with computer labs and system users on the same network" loading="lazy"><figcaption>The lab ecosystem. Robotics lab (red), the high-performance computation facility (teal) and the shared computer labs (grey), joined by one Ethernet network.</figcaption></figure>
+      <h3>Follow the data</h3>
+      <p>Pick a workflow to see which parts of the ecosystem it uses and which way the data moves.</p>
+      <div class="arch" id="eco-arch"><div class="arch-tabs" role="tablist" aria-label="Workflow"></div><div class="arch-body"><div class="arch-stage"></div><aside class="arch-info" aria-live="polite"></aside></div></div>
+      <p class="note">The computing side, its layered software stack and the GPU specifications, is described in <a href="../../aiml/ml-platform/">ML Training Platform</a>. The full system design is in <a href="../../assets/thesis/chapter-7.pdf" target="_blank" rel="noopener">thesis chapter 7 (PDF)</a>.</p>
+    </section>
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">02 · Robot architecture</div>
+      <h2>Simulation and <em>hardware paths</em></h2>
+      <p>Switch between the software path (planning and simulation) and the hardware path (the controller board and motors). Hover a block to trace its links, click it for details.</p>
+      <div class="arch" id="sc-arch">
+        <div class="arch-tabs" role="tablist" aria-label="View"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="encoder">
+      <div class="eyebrow">03 · Encoder demo</div>
+      <h2>Quadrature <em>decoding</em></h2>
+      <p>Each motor has two optical sensors 90° out of phase (channels A and B). Drag the slider to move the shaft one transition at a time. The three decoding modes count different edges, so resolution goes up from X1 to X4.</p>
+      <div class="enc">
+        <label class="enc-slider">Transitions <input id="enc-n" type="range" min="0" max="48" value="12"> <span id="enc-nv">12</span></label>
+        <div class="seg" id="enc-mode">
+          <button type="button" data-x="1">X1</button>
+          <button type="button" data-x="2" class="on">X2</button>
+          <button type="button" data-x="4">X4</button>
+        </div>
+        <svg id="enc-svg" viewBox="0 0 800 170" role="img" aria-label="Encoder channels A and B with counter"></svg>
+        <div class="enc-out">
+          <div><span class="k">Counted edges</span><strong id="enc-count">0</strong></div>
+          <div><span class="k">Resolution factor</span><strong id="enc-factor">×2</strong></div>
+        </div>
+        <p class="note">The counter is interrupt-driven on the board, so no edge is missed even at high shaft speeds.</p>
+      </div>
+    </section>
+
+    <section class="block" id="hardware">
+      <div class="eyebrow">04 · Hardware</div>
+      <h2>The controller <em>board</em></h2>
+      <p>The Robo_Con-II board is a custom PCB that drives up to eight motors. It was built for this arm and is also reusable for other robots with up to eight motors.</p>
+      <div class="gallery">
+        <figure>
+          <img src="media/board_pcb.png" alt="Robo_Con-II controller PCB, top view" loading="lazy">
+          <figcaption>Robo_Con-II controller board: eight motor-connector headers along the top, the ARM microcontroller in the centre, and the USB and serial ports on the right.</figcaption>
+        </figure>
+        <figure>
+          <img src="media/controller_unit.png" alt="Controller enclosure with the ROBOCON front panel" loading="lazy">
+          <figcaption>The finished controller unit in its enclosure, with a menu display, a power switch and eight ribbon-cable ports.</figcaption>
+        </figure>
+      </div>
+      <h3>Board specification</h3>
+      <div class="spec">
+        <div><span class="k">Microcontroller</span><strong>ARM Cortex-M3 (LPC1768)</strong></div>
+        <div><span class="k">Clock</span><strong>Up to 100 MHz</strong></div>
+        <div><span class="k">Memory</span><strong>512 KB flash · 64 KB data RAM</strong></div>
+        <div><span class="k">Motor outputs</span><strong>8 ports · 4 × L298 H-bridge drivers</strong></div>
+        <div><span class="k">Motor control</span><strong>PWM speed · direction · enable</strong></div>
+        <div><span class="k">Feedback</span><strong>Quadrature encoders (A/B) · home and limit switches</strong></div>
+        <div><span class="k">Host link</span><strong>UART at 19200 baud · USB · RS232</strong></div>
+        <div><span class="k">Toolchain</span><strong>Keil µVision4 · Flashmagic</strong></div>
+      </div>
+      <h3>Firmware responsibilities</h3>
+      <ul class="clean">
+        <li>Interrupt-driven pulse counter converts encoder edges into angles in degrees.</li>
+        <li>Reads effort and direction commands over UART and returns absolute joint positions.</li>
+        <li>Hard-homing sequence: each joint runs to its limit switch, reverses slowly, and sets zero.</li>
+        <li>Stall detection: flags high effort with no movement for a set time, then stops the motor.</li>
+        <li>Backward-compatible configuration, so the same firmware supports different hardware setups.</li>
+      </ul>
+    </section>
+
+    <section class="block" id="cad">
+      <div class="eyebrow">05 · Design</div>
+      <h2>3D <em>model</em></h2>
+      <p>The arm's 3D model starts as CAD parts. Each link is measured on the real robot, modelled in Blender, exported to URDF, and then used in simulation and MoveIt.</p>
+      <div class="gallery">
+        <figure>
+          <img src="media/blender_gui.png" alt="SCARA arm in the Blender interface" loading="lazy">
+          <figcaption>The SCARA model in Blender. The scara_description package builds its URDF from these meshes.</figcaption>
+        </figure>
+        <figure>
+          <img src="media/cad_links.png" alt="SCARA link CAD views from top, side, front and rotated angles" loading="lazy">
+          <figcaption>CAD views of Link 1 and Link 2, showing top, side, front and rotated angles.</figcaption>
+        </figure>
+      </div>
+      <p class="note">Photos of the physical arm are not included yet. I'll add them once they're available.</p>
+    </section>
+
+    <section class="block" id="firmware">
+      <div class="eyebrow">06 · Firmware</div>
+      <h2>Control loop and <em>homing</em></h2>
+      <div class="features">
+        <div class="feature"><span class="k">Loop</span><h3>UART-driven control loop</h3><p>Reads commands from the ROS host, updates effort and direction, then sends the joint positions back.</p></div>
+        <div class="feature"><span class="k">Home</span><h3>Two-stage hard-homing</h3><p>Each joint moves to its limit switch, reverses slowly to trigger it, and sets absolute zero. Encoders don't keep position across power cycles, so homing runs again after a power loss.</p></div>
+        <div class="feature"><span class="k">Safety</span><h3>Stall detection</h3><p>Flags a stall when effort is high while position barely changes for a set time. The motor is then stopped or a recovery starts.</p></div>
+        <div class="feature"><span class="k">Scope</span><h3>Known limitations</h3><p>The arm dates from the early 1990s. It shows motor slip and wear, and supports only position control.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script>
+  Arch.mount(document.querySelector('#eco-arch'), {
+    id: 'eco', width: 1000, height: 450, label: 'Robotics lab ecosystem',
+    columns: [],
+    modes: [
+      {id:'overview', label:'Whole ecosystem', desc:'Every link in use. The robotics lab, the computer labs and the computing facility share one Ethernet network.'},
+      {id:'collect', label:'1 · Collect demonstrations', desc:'The arm moves through a task. The embedded controller reads the joint encoders and streams joint states to the robot workstation, which logs them and sends the recordings over the network to shared storage.'},
+      {id:'train', label:'2 · Train models', desc:'The compute cluster reads datasets from storage, trains the generative models on its GPUs and writes checkpoints back. The management workstation schedules jobs and monitors the machines.'},
+      {id:'deploy', label:'3 · Run on the robot', desc:'A trained model generates joint trajectories. They travel back through the router and switch to the robot workstation, which checks them in simulation and sends joint commands to the controller to drive the arm.'},
+      {id:'shared', label:'Shared use', desc:'Students in the computer labs and other researchers reach the same compute cluster through the switch and router, so one facility serves research and teaching.'} ],
+    nodes: [
+      {id:'labs', x:20, y:30, w:180, h:80, title:'Computer labs', sub:'students', info:{body:'Teaching labs on the same network, with access to the compute cluster.'}},
+      {id:'user', x:220, y:30, w:170, h:80, title:'System users', sub:'researchers', info:{body:'Researchers who submit training jobs and use shared storage.'}},
+      {id:'sw', x:300, y:195, w:170, h:75, title:'Ethernet switch', sub:'lab network', info:{body:'Joins the robotics lab and the computer labs to the computing facility.'}},
+      {id:'rws', x:20, y:330, w:200, h:95, title:'Robot workstation', sub:'ROS 2 · MoveIt · Gazebo', info:{body:'Runs the ROS 2 stack: robot description, MoveIt planning, Gazebo simulation and ros_control. Logs demonstrations and sends commands to the controller.'}},
+      {id:'ctrl', x:255, y:345, w:195, h:80, title:'Embedded controller', sub:'Cortex-M3 · encoders', info:{body:'The custom controller board: quadrature decoding of the joint encoders, motor drive, hard-homing and a UART link to the workstation. Details below.'}},
+      {id:'robot', x:485, y:340, w:210, h:90, title:'SCARA arm + robots', sub:'robotics lab', kind:'core', info:{body:'The four-axis SCARA arm and the other robots in the lab.'}},
+      {id:'router', x:560, y:195, w:150, h:75, title:'Router', sub:'to the facility', info:{body:'Connects the lab network to the computing facility.'}},
+      {id:'storage', x:560, y:20, w:190, h:85, title:'Network storage', sub:'datasets · checkpoints', info:{body:'Shared storage for recorded demonstrations, generated datasets and trained model checkpoints.'}},
+      {id:'compute', x:780, y:20, w:200, h:125, title:'Compute cluster', sub:'CPUs + GPUs', lines:['14 Xeon E5-2650','20 GTX 1080 Ti','4 Tesla P100'], kind:'core', info:{body:'The training cluster. Models run in Docker containers with TensorFlow and PyTorch on CUDA.'}},
+      {id:'mgmt', x:780, y:190, w:200, h:80, title:'Management workstation', sub:'monitoring · jobs', info:{body:'Schedules and monitors training, and manages the machines remotely.'}}
+    ],
+    edges: [
+      {from:'robot', to:'ctrl', modes:['overview','collect'], d:'M485,375 L450,375', label:'encoders', lt:0.5},
+      {from:'ctrl', to:'robot', modes:['deploy'], d:'M450,410 L485,410', label:'drive', lt:0.5},
+      {from:'ctrl', to:'rws', modes:['overview','collect'], d:'M255,372 L220,365', label:'UART', lt:0.5},
+      {from:'rws', to:'ctrl', modes:['deploy'], d:'M220,400 L255,408', label:'', lt:0.5},
+      {from:'rws', to:'sw', modes:['overview','collect'], d:'M150,330 C150,262 250,222 300,222', label:'logs', lt:0.5},
+      {from:'sw', to:'rws', modes:['deploy'], d:'M300,252 C235,252 185,290 185,330', label:'trajectories', lt:0.55},
+      {from:'sw', to:'router', modes:['overview','collect','shared'], d:'M470,222 L560,222', label:'', lt:0.5},
+      {from:'router', to:'sw', modes:['deploy'], d:'M560,252 L470,252', label:'', lt:0.5},
+      {from:'router', to:'storage', modes:['overview','collect'], d:'M630,195 L645,105', label:'recordings', lt:0.5},
+      {from:'storage', to:'compute', modes:['overview','train'], d:'M750,55 L780,55', label:'', lt:0.5},
+      {from:'compute', to:'storage', modes:['train'], d:'M780,90 L750,90', label:'', lt:0.5},
+      {from:'mgmt', to:'compute', modes:['overview','train'], d:'M880,190 L880,145', label:'jobs', lt:0.5},
+      {from:'compute', to:'router', modes:['deploy'], d:'M800,145 C780,190 740,235 710,235', label:'model output', lt:0.5},
+      {from:'router', to:'compute', modes:['overview','shared'], d:'M690,195 C720,165 760,150 790,145', label:'', lt:0.5},
+      {from:'labs', to:'sw', modes:['overview','shared'], d:'M110,110 C110,170 250,210 300,210', label:'', lt:0.5},
+      {from:'user', to:'sw', modes:['overview','shared'], d:'M305,110 L350,195', label:'', lt:0.5}
+    ]
+  });
+
+    Arch.mount(document.getElementById('sc-arch'), {
+      id: 'sc', width: 1000, height: 420, label: 'SCARA controller architecture',
+      columns: [
+        { x: 40, w: 200, label: 'ROS 2 host' }, { x: 300, w: 220, label: 'Control' },
+        { x: 580, w: 190, label: 'Controller board' }, { x: 830, w: 150, label: 'Robot' }
+      ],
+      modes: [
+        { id: 'sw', label: 'Software path', desc: 'The robot model drives planning and simulation. MoveIt plans collision-free trajectories, and Gazebo runs them with joint controllers before anything touches hardware.' },
+        { id: 'hw', label: 'Hardware path', desc: 'ros_control sends effort commands to scara_hw, which talks to the ARM board over UART. The board drives the motors and reads encoder pulses to report joint positions.' }
+      ],
+      nodes: [
+        { id: 'desc', x: 40, y: 64, w: 200, h: 80, title: 'scara_description', sub: 'URDF · meshes',
+          info: { body: 'Robot model: URDF built from Blender CAD meshes, defining links, joints and inertial properties.' } },
+        { id: 'moveit', x: 40, y: 170, w: 200, h: 80, title: 'scara_moveit', sub: 'motion planning', modes: ['sw'],
+          info: { body: 'MoveIt planning group, kinematics solver and collision geometry. Produces collision-free joint trajectories.' } },
+        { id: 'gazebo', x: 40, y: 276, w: 200, h: 80, title: 'scara_gazebo', sub: 'simulation', modes: ['sw'],
+          info: { body: 'Gazebo physics with joint controllers and sensor emulators. Tests trajectories before they run on hardware.' } },
+        { id: 'control', x: 300, y: 64, w: 220, h: 100, title: 'scara_control', sub: 'ros_control · controller_manager',
+          lines: ['Position · velocity · effort'],
+          info: { body: 'Joint controllers that work with either the Gazebo plugin or the physical hardware interface.' } },
+        { id: 'hw', x: 300, y: 214, w: 220, h: 100, title: 'scara_hw', sub: 'hardware interface', modes: ['hw'],
+          lines: ['UART · 19200 baud'],
+          info: { body: 'Hardware abstraction: sends effort commands and receives absolute joint positions from the embedded board.' } },
+        { id: 'board', x: 580, y: 214, w: 190, h: 100, title: 'Robo_Con-II board', sub: 'ARM Cortex-M3 (LPC1768)', modes: ['hw'],
+          lines: ['8 motor ports', 'Interrupt-driven counters'],
+          info: { body: 'Custom PCB: 100 MHz ARM Cortex-M3 with 512 KB flash, 64 KB RAM, USB and RS232. Drives the motors through L298 drivers using PWM.' } },
+        { id: 'enc', x: 580, y: 64, w: 190, h: 100, title: 'Quadrature encoders', sub: 'A/B pulses', modes: ['hw'],
+          info: { body: 'Two optical sensors per motor, 90° out of phase. The board decodes X1, X2 or X4 edges to track position.' } },
+        { id: 'motors', x: 830, y: 64, w: 150, h: 100, title: 'PMDC motors', sub: 'with gearboxes', modes: ['hw'],
+          info: { body: 'Permanent-magnet DC servo motors with integral gearboxes, limit switches and home switches.' } },
+        { id: 'arm', x: 830, y: 214, w: 150, h: 100, title: 'SCARA arm', sub: '4 axes', modes: ['hw'],
+          lines: ['Reach 18 in', 'Gripper'],
+          info: { body: 'Three revolute joints and one prismatic joint, with a gripper. Repeatable pick-and-place within an 18-inch reach.' } }
+      ],
+      edges: [
+        { from: 'desc', to: 'moveit', modes: ['sw'], label: 'robot model', lt: 0.5 },
+        { from: 'moveit', to: 'control', modes: ['sw'], label: 'trajectory', lt: 0.5 },
+        { from: 'gazebo', to: 'control', modes: ['sw'], d: 'M240,316 C300,316 260,150 300,124', label: 'joint states', lt: 0.5, lx: -20 },
+        { from: 'control', to: 'hw', modes: ['hw'], label: 'effort', lt: 0.5 },
+        { from: 'hw', to: 'board', modes: ['hw'], label: 'UART', lt: 0.5 },
+        { from: 'board', to: 'motors', modes: ['hw'], d: 'M675,214 L675,164 L830,114', label: 'PWM', lt: 0.5 },
+        { from: 'enc', to: 'board', modes: ['hw'], label: 'A/B pulses', lt: 0.5 },
+        { from: 'motors', to: 'arm', modes: ['hw'], d: 'M905,164 L905,214', label: 'torque', lt: 0.5, lx: 36 }
+      ]
+    });
+
+    /* Encoder demo: four-state quadrature sequence, counted per mode. */
+    (function () {
+      const states = [[0, 0], [1, 0], [1, 1], [0, 1]];
+      const svg = document.getElementById('enc-svg');
+      const NS = 'http://www.w3.org/2000/svg';
+      const n = document.getElementById('enc-n'), nv = document.getElementById('enc-nv');
+      const cnt = document.getElementById('enc-count'), fac = document.getElementById('enc-factor');
+      let X = 2;
+      const N = 48;
+      function lv(k) { return states[((k % 4) + 4) % 4]; }
+      function count(k, mode) {
+        let c = 0;
+        for (let i = 1; i <= k; i++) {
+          const a0 = lv(i - 1), a1 = lv(i);
+          const aChanged = a0[0] !== a1[0], bChanged = a0[1] !== a1[1];
+          if (mode === 1) { if (a0[0] === 0 && a1[0] === 1) c++; }
+          else if (mode === 2) { if (aChanged) c++; }
+          else { if (aChanged || bChanged) c++; }
+        }
+        return c;
+      }
+      function draw(k) {
+        svg.innerHTML = '';
+        const x0 = 60, dx = 14, yA = 50, yB = 120, amp = 40;
+        const mk = function (tag, attrs) { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); svg.appendChild(e); return e; };
+        mk('rect', { x: x0, y: 20, width: k * dx, height: 140, fill: 'rgba(90,72,200,0.08)' });
+        ['A', 'B'].forEach(function (ch, c) {
+          const base = c === 0 ? yA : yB;
+          let pts = '';
+          for (let i = 0; i <= N; i++) {
+            const v = lv(i)[c];
+            const y = base - v * amp;
+            const x = x0 + i * dx;
+            pts += (i === 0 ? '' : ' ' + x + ',' + (base - lv(i - 1)[c] * amp)) + ' ' + x + ',' + y;
+          }
+          mk('polyline', { points: pts.trim(), fill: 'none', stroke: c === 0 ? '#5a48c8' : '#2f6f8f', 'stroke-width': 2.2 });
+          mk('text', { x: 20, y: base - amp / 2 + 5, 'font-size': 14, fill: '#6b6880' }).textContent = ch;
+        });
+        mk('line', { x1: x0 + k * dx, y1: 12, x2: x0 + k * dx, y2: 150, stroke: '#d9822b', 'stroke-width': 2, 'stroke-dasharray': '4 4' });
+      }
+      function render() {
+        const k = parseInt(n.value, 10);
+        nv.textContent = k;
+        draw(k);
+        cnt.textContent = count(k, X);
+        fac.textContent = '×' + X;
+      }
+      n.addEventListener('input', render);
+      document.querySelectorAll('#enc-mode button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          X = parseInt(b.dataset.x, 10);
+          document.querySelectorAll('#enc-mode button').forEach(function (o) { o.classList.toggle('on', o === b); });
+          render();
+        });
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

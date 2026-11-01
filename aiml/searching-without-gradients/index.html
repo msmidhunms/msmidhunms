@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Searching Without Gradients | Midhun</title>
+  <meta name="description" content="How to search when every try is expensive and there is no gradient to follow: hyperparameter optimisation on a GPU cluster and latent-space search in a trained generator, with an interactive search demo.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="stylesheet" href="../../assets/thesis.css">
+  <style>
+    .lab { display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap:1.2rem; align-items:start; margin-top:1rem; }
+    .lab canvas { width:100%; height:auto; display:block; border-radius:12px; border:1px solid var(--border); background:#fff; }
+    .ctl { display:grid; gap:.7rem; }
+    .ctl .row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .ctl button.act { border:1px solid #d6d0ec; background:#fff; border-radius:999px; padding:.35rem .9rem; cursor:pointer; font:inherit; color:#3b3754; }
+    .ctl button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .ctl label { display:grid; grid-template-columns: 6.5rem 1fr 2.5rem; gap:.5rem; align-items:center; font-size:.92rem; }
+    .ctl input[type=range] { width:100%; accent-color:var(--accent); }
+    .stats { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.5rem; }
+    .stats div { border:1px solid var(--border); border-radius:10px; padding:.5rem .7rem; background:var(--surface); }
+    .stats .k { display:block; font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .stats strong { font-size:1.05rem; font-variant-numeric: tabular-nums; }
+    .explain { border-radius:10px; background:#f1eefc; padding:.7rem .9rem; font-size:.93rem; margin:0; }
+    .methods { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap:.8rem; margin-top:1rem; }
+    .methods div { border:1px solid var(--border); border-radius:12px; padding:.85rem 1rem; background:var(--surface); }
+    .methods h3 { margin:0 0 .3rem; font-size:1rem; }
+    .methods p { margin:0; font-size:.9rem; }
+    .methods .use { display:block; margin-top:.5rem; font-size:.8rem; color:var(--accent); }
+    .uses { display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-top:1rem; }
+    .use-card { border:1px solid var(--border); border-radius:14px; padding:1rem 1.1rem; background:var(--surface); }
+    .use-card h3 { margin:.1rem 0 .4rem; }
+    .use-card .k { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .use-card svg { width:100%; height:auto; display:block; margin:.6rem 0; }
+    .use-card ul { margin:.4rem 0 0; padding-left:1.1rem; font-size:.92rem; }
+    .cost { display:grid; grid-template-columns: 1fr 1fr 1fr; border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-top:1rem; font-size:.93rem; }
+    .cost div { padding:.6rem .8rem; border-bottom:1px solid var(--border); background:var(--surface); }
+    .cost div.h { background:#f4f2fb; font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+    .links { display:grid; gap:.7rem; margin-top:1rem; }
+    .links a.item { display:block; border:1px solid var(--border); border-radius:12px; padding:.8rem 1rem; background:var(--surface); text-decoration:none; color:inherit; }
+    .links a.item:hover { border-color:var(--accent); }
+    .links .k { display:block; font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .links strong { color:var(--accent); }
+    @media (max-width: 800px) { .lab, .uses { grid-template-columns: 1fr; } .cost { grid-template-columns: 1fr; } .cost div.h { display:none; } }
+  </style>
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← AI/ML</a></li>
+        <li><a href="#problem">The problem</a></li>
+        <li><a href="#demo">Try it</a></li>
+        <li><a href="#methods">Methods</a></li>
+        <li><a href="#uses">Where I used it</a></li>
+        <li><a href="#read">Read more</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">AI &amp; ML · Optimisation</div>
+      <h1>Searching without <em>gradients</em></h1>
+      <p class="lead">Some of the hardest searches in machine learning have no gradient to follow, and every try is expensive. I met this problem twice in the same project: choosing how to build a model, and finding the input that makes a trained generator produce a given motion.</p>
+      <div class="meta" style="justify-content:center;"><span class="tag">Black-box optimisation</span><span class="tag">Bayesian optimisation</span><span class="tag">Evolution strategies</span><span class="tag">Pattern Search</span><span class="tag">Interactive demo</span></div>
+    </header>
+
+    <section class="block" id="problem">
+      <div class="eyebrow">01 · The problem</div>
+      <h2>A landscape you can only <em>sample</em></h2>
+      <p>Imagine a hilly landscape in fog. You want the lowest point, but you cannot see the slope: you can only stand somewhere and read the height. Each reading costs time. Training a neural network uses gradients to roll downhill, but some questions sit outside that: the network's own design, or a search through a model that cannot be inverted. Those need a strategy for <em>where to look next</em>.</p>
+      <div class="cost">
+        <div class="h">&nbsp;</div><div class="h">Hyperparameter search</div><div class="h">Latent-space search</div>
+        <div><strong>What is searched</strong></div><div>How the model is built: layers, kernel size, dropout, activation</div><div>The latent code z of a trained generator</div>
+        <div><strong>One try means</strong></div><div>Training a whole model, hours on a GPU</div><div>One pass through the generator</div>
+        <div><strong>Looking for</strong></div><div>The design with the lowest validation loss</div><div>The code that reproduces a target trajectory</div>
+        <div><strong>Why no gradient</strong></div><div>Choices like the number of layers are discrete</div><div>The objective can be non-differentiable, and gradient steps get stuck</div>
+      </div>
+    </section>
+
+    <section class="block" id="demo">
+      <div class="eyebrow">02 · Try it</div>
+      <h2>Five ways to search, one <em>budget</em></h2>
+      <p>The map is a made-up landscape: darker is better, and the best spot is hidden among a few decoys. Pick a strategy, set how many tries you can afford, and watch where each one looks.</p>
+      <div class="toggle" id="ctx"></div>
+      <div class="lab">
+        <canvas id="map" width="560" height="560" aria-label="Search landscape with the points each strategy tries"></canvas>
+        <div class="ctl">
+          <div class="toggle" id="strat" style="margin:0;"></div>
+          <label>Budget <input type="range" id="budget" min="10" max="60" step="1" value="30"><output id="budget-v">30</output></label>
+          <div class="row">
+            <button type="button" class="act primary" id="run">▶ Run</button>
+            <button type="button" class="act" id="step">One try</button>
+            <button type="button" class="act" id="reset">Reset</button>
+            <button type="button" class="act" id="compare">Compare all five</button>
+          </div>
+          <div class="stats">
+            <div><span class="k">Tries used</span><strong id="s-used">0</strong></div>
+            <div><span class="k">Best found</span><strong id="s-best">–</strong></div>
+            <div><span class="k" id="s-cost-k">Cost so far</span><strong id="s-cost">–</strong></div>
+          </div>
+          <p class="explain" id="how"></p>
+          <canvas id="curve" width="520" height="220" aria-label="Best value found against number of tries"></canvas>
+          <p class="note" style="margin:0;" id="curve-note">The chart shows the best value found so far after each try. Lower is better.</p>
+        </div>
+      </div>
+      <p class="note">This is an illustration on a synthetic landscape. Results change from run to run, because every strategy here uses randomness.</p>
+    </section>
+
+    <section class="block" id="methods">
+      <div class="eyebrow">03 · Methods</div>
+      <h2>How each strategy picks the <em>next try</em></h2>
+      <div class="methods">
+        <div><h3>Grid search</h3><p>Tries every combination on a fixed grid. Simple and thorough, but the number of tries multiplies with every setting added.</p><span class="use">Small spaces, two or three settings</span></div>
+        <div><h3>Random search</h3><p>Samples at random. Covers more distinct values of each setting than a grid for the same budget, which matters when only a few settings really count.</p><span class="use">A strong, cheap baseline</span></div>
+        <div><h3>Bayesian optimisation</h3><p>Fits a model of the landscape to the tries so far, then picks the point that balances "probably good" with "still unknown".</p><span class="use">Very expensive tries, such as training runs</span></div>
+        <div><h3>Evolution strategies</h3><p>Keeps a population of candidates, mutates the best ones and narrows the search as it improves. Includes GA, DE, ES, CMA-ES, ISRES and SRES.</p><span class="use">Rugged landscapes with many decoys</span></div>
+        <div><h3>Pattern Search</h3><p>Steps in fixed directions from the current best point, and halves the step when nothing improves. No randomness in the moves themselves.</p><span class="use">Fast, local refinement</span></div>
+        <div><h3>Early termination</h3><p>Not a search order but a saving: Hyperband and BOHB stop weak training runs early and give the freed time to promising ones.</p><span class="use">Training runs on a shared GPU cluster</span></div>
+      </div>
+    </section>
+
+    <section class="block" id="uses">
+      <div class="eyebrow">04 · Where I used it</div>
+      <h2>Two searches in one <em>project</em></h2>
+      <div class="uses">
+        <div class="use-card">
+          <span class="k">Outer loop · designing the model</span>
+          <h3>Hyperparameter search on a GPU cluster</h3>
+          <svg viewBox="0 0 420 200" aria-label="Loop: optimiser proposes a configuration, it is trained on a GPU, the validation loss goes back to the optimiser">
+            <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a84b3"/></marker></defs>
+            <g font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">
+              <rect x="10" y="20" width="120" height="60" rx="10" fill="#efecfb" stroke="#5a48c8"/><text x="70" y="47" fill="#1c1b24">Optimiser</text><text x="70" y="64" font-size="11" fill="#6b6880">Optuna</text>
+              <rect x="150" y="20" width="120" height="60" rx="10" fill="#fff" stroke="#c9c4dd"/><text x="210" y="47" fill="#1c1b24">Configuration</text><text x="210" y="64" font-size="11" fill="#6b6880">layers · kernel · dropout</text>
+              <rect x="290" y="20" width="120" height="60" rx="10" fill="#fff" stroke="#c9c4dd"/><text x="350" y="47" fill="#1c1b24">Train on GPU</text><text x="350" y="64" font-size="11" fill="#6b6880">many trials in parallel</text>
+              <rect x="150" y="120" width="120" height="60" rx="10" fill="#fbf1e6" stroke="#d9822b"/><text x="210" y="147" fill="#1c1b24">Validation loss</text><text x="210" y="164" font-size="11" fill="#6b6880">weak runs stopped early</text>
+              <g stroke="#8a84b3" stroke-width="2" fill="none" marker-end="url(#a1)"><path d="M130,50 L148,50"/><path d="M270,50 L288,50"/><path d="M350,80 C350,140 300,150 272,150"/><path d="M150,150 C80,150 70,120 70,82"/></g>
+            </g>
+          </svg>
+          <ul>
+            <li>Searched the depth, kernel sizes, bidirectional LSTM, dropout, activation and normalisation of the generative models.</li>
+            <li>Ran trials in parallel on the lab's GPU cluster in containers, with early termination to save compute.</li>
+            <li>Used the search history to see which settings mattered most.</li>
+          </ul>
+        </div>
+        <div class="use-card">
+          <span class="k">Inner loop · using the model</span>
+          <h3>Latent-space search in a trained generator</h3>
+          <svg viewBox="0 0 420 200" aria-label="Loop: optimiser proposes z, the generator produces a trajectory, it is compared with the target, the error goes back to the optimiser">
+            <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a84b3"/></marker></defs>
+            <g font-family="system-ui, sans-serif" font-size="13" text-anchor="middle">
+              <rect x="10" y="20" width="120" height="60" rx="10" fill="#efecfb" stroke="#5a48c8"/><text x="70" y="47" fill="#1c1b24">Optimiser</text><text x="70" y="64" font-size="11" fill="#6b6880">proposes z</text>
+              <rect x="150" y="20" width="120" height="60" rx="10" fill="#fff" stroke="#c9c4dd"/><text x="210" y="47" fill="#1c1b24">Generator G</text><text x="210" y="64" font-size="11" fill="#6b6880">trained, fixed</text>
+              <rect x="290" y="20" width="120" height="60" rx="10" fill="#fff" stroke="#c9c4dd"/><text x="350" y="47" fill="#1c1b24">G(z)</text><text x="350" y="64" font-size="11" fill="#6b6880">a trajectory</text>
+              <rect x="150" y="120" width="120" height="60" rx="10" fill="#fbf1e6" stroke="#d9822b"/><text x="210" y="147" fill="#1c1b24">‖G(z) − target‖²</text><text x="210" y="164" font-size="11" fill="#6b6880">how far from the goal</text>
+              <rect x="290" y="120" width="120" height="60" rx="10" fill="#fff" stroke="#c9c4dd"/><text x="350" y="147" fill="#1c1b24">Target</text><text x="350" y="164" font-size="11" fill="#6b6880">a real trajectory</text>
+              <g stroke="#8a84b3" stroke-width="2" fill="none" marker-end="url(#a2)"><path d="M130,50 L148,50"/><path d="M270,50 L288,50"/><path d="M330,80 L250,118"/><path d="M290,150 L272,150"/><path d="M150,150 C80,150 70,120 70,82"/></g>
+            </g>
+          </svg>
+          <ul>
+            <li>A GAN has no encoder, so it cannot say which z produces a given trajectory. This search recovers it.</li>
+            <li>Compared a nearest-neighbour lookup with seven optimisers: GA, DE, ES, CMA-ES, ISRES, SRES and Pattern Search.</li>
+            <li>The trade-off is accuracy against computation time. See <a href="../../robotics/learning-as-a-game/">Learning a task as a game</a> for the generator.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="read">
+      <div class="eyebrow">05 · Read more</div>
+      <h2>Thesis</h2>
+      <div class="links">
+        <a class="item" href="https://shodhganga.inflibnet.ac.in/handle/10603/669301" target="_blank" rel="noopener"><span class="k">PhD thesis · CUSAT, 2025</span><strong>Robot trajectory amenagement under structured static environment using data driven generative latent variable models ↗</strong></a>
+        <a class="item" href="../../assets/thesis/chapter-5.pdf" target="_blank" rel="noopener"><span class="k">Thesis chapter 5 (PDF)</span><strong>Includes the latent-space search in a trained generator ↗</strong></a>
+        <a class="item" href="../../assets/thesis/chapter-6.pdf" target="_blank" rel="noopener"><span class="k">Thesis chapter 6 (PDF)</span><strong>Includes the hyperparameter search for the sequence models ↗</strong></a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/thesis.js"></script>
+  <script>
+  (function () {
+    // ---------- landscape on [-1,1]^2, lower is better ----------
+    const G = (x, y, cx, cy, s) => Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * s * s));
+    const f = (x, y) => 0.35 * (x * x + y * y) - 1.25 * G(x, y, 0.58, -0.38, 0.11) - 0.85 * G(x, y, -0.52, 0.46, 0.2) - 0.75 * G(x, y, -0.38, -0.58, 0.16) - 0.55 * G(x, y, 0.3, 0.62, 0.14) + 0.07 * Math.sin(7 * x) * Math.cos(6 * y);
+    // global minimum by dense scan
+    let FMIN = 1e9, FMAX = -1e9;
+    for (let i = 0; i <= 300; i++) for (let j = 0; j <= 300; j++) { const v = f(-1 + 2 * i / 300, -1 + 2 * j / 300); FMIN = Math.min(FMIN, v); FMAX = Math.max(FMAX, v); }
+    const score = v => (v - FMIN) / (FMAX - FMIN); // 0 = best possible
+    const clamp = v => Math.max(-1, Math.min(1, v));
+
+    // ---------- canvas ----------
+    const cv = document.getElementById('map'), ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const px = x => (x + 1) / 2 * W, py = y => (1 - (y + 1) / 2) * H;
+    const bg = ctx.createImageData(W, H);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const v = score(f(-1 + 2 * i / W, 1 - 2 * j / H)), t = Math.pow(1 - v, 2.2), k = (j * W + i) * 4;
+      const band = Math.abs((v * 14) % 1 - 0.5) < 0.03 ? 0.06 : 0;
+      bg.data[k] = 250 - 160 * t - 255 * band; bg.data[k + 1] = 249 - 177 * t - 255 * band; bg.data[k + 2] = 253 - 53 * t - 255 * band; bg.data[k + 3] = 255;
+    }
+    let bgCanvas = document.createElement('canvas'); bgCanvas.width = W; bgCanvas.height = H; bgCanvas.getContext('2d').putImageData(bg, 0, 0);
+
+    // ---------- strategies: each is a generator of points ----------
+    function* gridS(B) { const n = Math.max(2, Math.floor(Math.sqrt(B))); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) yield [-1 + (2 * i + 1) / n, -1 + (2 * j + 1) / n]; while (true) yield [Math.random() * 2 - 1, Math.random() * 2 - 1]; }
+    function* randomS() { while (true) yield [Math.random() * 2 - 1, Math.random() * 2 - 1]; }
+    function* patternS(hist) {
+      let p = [Math.random() * 1.6 - 0.8, Math.random() * 1.6 - 0.8], step = 0.4; yield p;
+      let best = hist[hist.length - 1].v;
+      while (true) {
+        let moved = false;
+        for (const d of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const q = [clamp(p[0] + d[0] * step), clamp(p[1] + d[1] * step)]; yield q;
+          const v = hist[hist.length - 1].v; if (v < best) { best = v; p = q; moved = true; break; }
+        }
+        if (!moved) step = Math.max(0.01, step / 2);
+      }
+    }
+    function* esS(hist) {
+      let m = [Math.random() * 1.6 - 0.8, Math.random() * 1.6 - 0.8], sig = 0.45; yield m;
+      let bestV = hist[hist.length - 1].v;
+      while (true) {
+        const start = hist.length; let improved = false;
+        for (let k = 0; k < 5; k++) { const g = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }; yield [clamp(m[0] + sig * g()), clamp(m[1] + sig * g())]; }
+        for (let k = start; k < hist.length; k++) if (hist[k].v < bestV) { bestV = hist[k].v; m = [hist[k].x, hist[k].y]; improved = true; }
+        sig = improved ? Math.min(0.6, sig * 1.1) : Math.max(0.03, sig * 0.7);
+      }
+    }
+    function* bayesS(hist) {
+      for (let k = 0; k < 5; k++) yield [Math.random() * 2 - 1, Math.random() * 2 - 1];
+      const ell = 0.22, kf = (a, b) => Math.exp(-((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2) / (2 * ell * ell));
+      while (true) {
+        const X = hist.map(h => [h.x, h.y]), ys = hist.map(h => h.v), n = X.length;
+        const mu0 = ys.reduce((a, b) => a + b, 0) / n, sd0 = Math.sqrt(ys.reduce((a, b) => a + (b - mu0) ** 2, 0) / n) || 1;
+        const Y = ys.map(v => (v - mu0) / sd0);
+        const K = X.map((a, i) => X.map((b, j) => kf(a, b) + (i === j ? 1e-4 : 0)));
+        const L = K.map(r => r.map(() => 0));
+        for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) { let s = K[i][j]; for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k]; L[i][j] = i === j ? Math.sqrt(Math.max(s, 1e-9)) : s / L[j][j]; }
+        const solveL = b => { const z = b.slice(); for (let i = 0; i < n; i++) { for (let k = 0; k < i; k++) z[i] -= L[i][k] * z[k]; z[i] /= L[i][i]; } return z; };
+        const solveLT = b => { const z = b.slice(); for (let i = n - 1; i >= 0; i--) { for (let k = i + 1; k < n; k++) z[i] -= L[k][i] * z[k]; z[i] /= L[i][i]; } return z; };
+        const alpha = solveLT(solveL(Y));
+        let best = null, bestA = 1e9;
+        for (let c = 0; c < 400; c++) {
+          const p = [Math.random() * 2 - 1, Math.random() * 2 - 1], ks = X.map(a => kf(a, p));
+          const mu = ks.reduce((s, v, i) => s + v * alpha[i], 0), w = solveL(ks), varr = Math.max(1e-9, 1 - w.reduce((s, v) => s + v * v, 0));
+          const a = mu - 2.0 * Math.sqrt(varr); if (a < bestA) { bestA = a; best = p; }
+        }
+        yield best;
+      }
+    }
+    const STRATS = {
+      grid: { name: 'Grid', make: (B, h) => gridS(B), color: '#9b96b5', how: 'Grid search spreads its tries evenly. It never misses a region, but it cannot zoom in on a good one, and the best spot may fall between grid points.' },
+      random: { name: 'Random', make: (B, h) => randomS(), color: '#2f8f6f', how: 'Random search samples anywhere. It is cheap and hard to beat as a baseline, but it learns nothing from earlier tries.' },
+      bayes: { name: 'Bayesian', make: (B, h) => bayesS(h), color: '#5a48c8', how: 'Bayesian optimisation fits a model of the landscape after each try, then chooses the point that is either predicted to be good or still uncertain. It needs few tries, which suits costly training runs.' },
+      es: { name: 'Evolution', make: (B, h) => esS(h), color: '#d9822b', how: 'An evolution strategy mutates the best candidate in small batches and shrinks its step size when progress stalls. It handles rugged landscapes well.' },
+      pattern: { name: 'Pattern Search', make: (B, h) => patternS(h), color: '#2f6f8f', how: 'Pattern Search steps left, right, up and down from the best point, and halves the step when nothing improves. It refines quickly, but where it starts matters.' }
+    };
+    const CTX = {
+      hp: { x: 'dropout rate', y: 'learning rate (log scale)', unit: 'training run', cost: n => n + (n === 1 ? ' training run' : ' training runs'), costK: 'Cost so far', label: 'validation loss' },
+      lat: { x: 'latent dimension z₁', y: 'latent dimension z₂', unit: 'generator pass', cost: n => n + (n === 1 ? ' generator pass' : ' generator passes'), costK: 'Cost so far', label: 'distance to target' }
+    };
+    let strat = 'bayes', ctxK = 'hp', B = 30, hist = [], gen = null, timer = null;
+
+    function reset() { stop(); hist = []; gen = null; draw(); }
+    function evalNext() {
+      if (hist.length >= B) { stop(); return false; }
+      if (!gen) { gen = STRATS[strat].make(B, hist); }
+      const p = gen.next().value; hist.push({ x: p[0], y: p[1], v: f(p[0], p[1]) });
+      draw(); return true;
+    }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } document.getElementById('run').textContent = '▶ Run'; }
+    function bestSoFar(h) { let b = 1e9; return h.map(e => (b = Math.min(b, e.v), score(b))); }
+
+    function draw() {
+      ctx.drawImage(bgCanvas, 0, 0);
+      const C = CTX[ctxK];
+      ctx.fillStyle = '#6b6880'; ctx.font = '13px system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(C.x + ' →', W / 2, H - 8);
+      ctx.save(); ctx.translate(14, H / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(C.y + ' →', 0, 0); ctx.restore();
+      const col = STRATS[strat].color;
+      // path of tries
+      ctx.strokeStyle = 'rgba(28,27,36,.18)'; ctx.lineWidth = 1; ctx.beginPath();
+      hist.forEach((h, i) => { i ? ctx.lineTo(px(h.x), py(h.y)) : ctx.moveTo(px(h.x), py(h.y)); }); if (strat === 'pattern' || strat === 'es') ctx.stroke();
+      hist.forEach((h, i) => {
+        const a = 0.35 + 0.65 * (i + 1) / hist.length;
+        ctx.beginPath(); ctx.arc(px(h.x), py(h.y), 6, 0, 2 * Math.PI); ctx.fillStyle = col; ctx.globalAlpha = a; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+      });
+      if (hist.length) {
+        const b = hist.reduce((a, e) => e.v < a.v ? e : a);
+        ctx.beginPath(); ctx.arc(px(b.x), py(b.y), 12, 0, 2 * Math.PI); ctx.strokeStyle = '#1c1b24'; ctx.lineWidth = 2.5; ctx.stroke();
+        ctx.fillStyle = '#1c1b24'; ctx.font = '12px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.fillText('best so far', px(b.x) + 15, py(b.y) + 4);
+      }
+      // stats
+      document.getElementById('s-used').textContent = hist.length + ' / ' + B;
+      const bs = bestSoFar(hist);
+      document.getElementById('s-best').textContent = hist.length ? (bs[bs.length - 1] * 100).toFixed(1) + '% off' : '–';
+      document.getElementById('s-cost').textContent = hist.length ? C.cost(hist.length) : '–';
+      drawCurves([{ name: STRATS[strat].name, color: col, ys: bs }]);
+    }
+    const cc = document.getElementById('curve'), cx2 = cc.getContext('2d');
+    function drawCurves(series) {
+      const CW = cc.width, CH = cc.height, L = 44, R = 12, T = 12, Bm = 30;
+      cx2.clearRect(0, 0, CW, CH);
+      cx2.strokeStyle = '#e1ddf0'; cx2.lineWidth = 1; cx2.fillStyle = '#8a86a3'; cx2.font = '11px system-ui, sans-serif';
+      for (let g = 0; g <= 4; g++) { const y = T + (CH - T - Bm) * g / 4; cx2.beginPath(); cx2.moveTo(L, y); cx2.lineTo(CW - R, y); cx2.stroke(); cx2.textAlign = 'right'; cx2.fillText(((1 - g / 4) * 50).toFixed(0) + '%', L - 6, y + 4); }
+      cx2.textAlign = 'center'; cx2.fillText('tries', (L + CW - R) / 2, CH - 6);
+      for (let t = 0; t <= B; t += 10) cx2.fillText(String(t), L + (CW - L - R) * t / B, CH - 16);
+      const X = i => L + (CW - L - R) * (i + 1) / B, Y = v => T + (CH - T - Bm) * (1 - Math.min(0.5, v) / 0.5);
+      series.forEach(s => {
+        if (!s.ys.length) return;
+        cx2.strokeStyle = s.color; cx2.lineWidth = 2.4; cx2.beginPath();
+        s.ys.forEach((v, i) => { i ? cx2.lineTo(X(i), Y(v)) : cx2.moveTo(X(i), Y(v)); }); cx2.stroke();
+      });
+      if (series.length > 1) {
+        cx2.textAlign = 'left'; cx2.font = '12px system-ui, sans-serif';
+        series.forEach((s, k) => { cx2.fillStyle = s.color; cx2.fillRect(CW - R - 120, T + 6 + k * 16, 10, 3); cx2.fillText(s.name, CW - R - 106, T + 11 + k * 16); });
+      }
+    }
+    function compareAll() {
+      stop();
+      const series = Object.keys(STRATS).map(k => {
+        const h = [], g = STRATS[k].make(B, h);
+        for (let i = 0; i < B; i++) { const p = g.next().value; h.push({ x: p[0], y: p[1], v: f(p[0], p[1]) }); }
+        return { name: STRATS[k].name, color: STRATS[k].color, ys: bestSoFar(h) };
+      });
+      drawCurves(series);
+      document.getElementById('curve-note').textContent = 'One run of each strategy with the same budget of ' + B + ' tries. Run it again and the order can change.';
+    }
+
+    T.toggles(document.getElementById('ctx'), [{ label: 'Searching hyperparameters', value: 'hp' }, { label: 'Searching a latent space', value: 'lat' }], v => { ctxK = v; draw(); });
+    T.toggles(document.getElementById('strat'), Object.keys(STRATS).map(k => ({ label: STRATS[k].name, value: k })), v => { strat = v; document.getElementById('how').textContent = STRATS[v].how; document.getElementById('curve-note').textContent = 'The chart shows the best value found so far after each try. Lower is better.'; reset(); });
+    // default selection Bayesian
+    const sb = [...document.querySelectorAll('#strat button')]; sb.forEach(b => b.classList.toggle('on', b.textContent === 'Bayesian'));
+    document.getElementById('how').textContent = STRATS.bayes.how;
+    document.getElementById('budget').addEventListener('input', function () { B = +this.value; document.getElementById('budget-v').textContent = B; reset(); });
+    document.getElementById('run').addEventListener('click', function () {
+      if (timer) { stop(); return; }
+      if (hist.length >= B) reset();
+      this.textContent = '❚❚ Pause'; timer = setInterval(() => { if (!evalNext()) stop(); }, 140);
+    });
+    document.getElementById('step').addEventListener('click', () => { stop(); evalNext(); });
+    document.getElementById('reset').addEventListener('click', reset);
+    document.getElementById('compare').addEventListener('click', compareAll);
+    draw();
+  })();
+  </script>
+</body>
+</html>

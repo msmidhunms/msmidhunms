@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quadcopter Control | Midhun</title>
+  <meta name="description" content="A quadcopter in ROS 2 and Gazebo with a hand-written flight stack: joystick flight, autonomous missions and rendered flight videos.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#flight">Flight</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#stack">Flight stack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Control &amp; Simulation</div>
+      <h1>Quadcopter <em>control</em></h1>
+      <p class="lead">An X-frame quadcopter (1.5 kg, 9-inch props) simulated in Gazebo Harmonic, with a hand-written ROS 2 Jazzy flight stack. Fly it with a joystick, or let it fly missions autonomously.</p>
+      <div class="meta">
+        <span class="tag">ROS 2 Jazzy</span><span class="tag">Gazebo Harmonic</span><span class="tag">SE(3) control</span><span class="tag">Docker</span><span class="tag">Blender</span>
+      </div>
+    </header>
+
+    <section class="block" id="flight">
+      <div class="eyebrow">01 · Flight</div>
+      <h2>Highlights</h2>
+      <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/drone_highlights.mp4"></video><figcaption>Flight highlights, manual and autonomous.</figcaption></figure>
+      <div class="grid2">
+        <figure class="media-block"><img src="media/render_gate.png" alt="Racing gate render"><figcaption>Racing gate mission, rendered.</figcaption></figure>
+        <figure class="media-block"><img src="media/render_helipad.png" alt="Helipad render"><figcaption>Take-off and landing on the helipad.</figcaption></figure>
+        <figure class="media-block"><img src="media/still_gates.png" alt="Gates still"><figcaption>Gates in the airfield world.</figcaption></figure>
+        <figure class="media-block"><img src="media/ground_station.png" alt="Ground station"><figcaption>Web ground station: HUD, sticks and telemetry.</figcaption></figure>
+      </div>
+    </section>
+
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">03 · Architecture</div>
+      <h2>How the <em>pieces</em> connect</h2>
+      <p>Switch between manual and autonomous flight to see which path drives the drone. This is a simplified view of the flight stack. <a href="media/architecture.html">Open the detailed illustrated version →</a></p>
+      <div class="arch" id="q-arch">
+        <div class="arch-tabs" role="tablist" aria-label="Flight mode"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="stack">
+      <div class="eyebrow">04 · Flight stack</div>
+      <h2>What's <em>inside</em></h2>
+      <div class="table-wrap">
+        <table class="plain">
+          <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Flight controller</td><td>Geometric tracking controller on SE(3) with acceleration feed-forward, tilt and acceleration limits, anti-windup integrator, and a priority-aware motor mixer</td></tr>
+            <tr><td>Pilot interface</td><td>Mode-2 sticks commanding velocity, take-off, land and mission buttons, pilot override of autonomy, hold-to-kill</td></tr>
+            <tr><td>Autonomy</td><td>Missions with smooth C2 trajectories: figure-8, racing gates, cinematic orbit, lawn-mower survey</td></tr>
+            <tr><td>Safety logic</td><td>Arm, take-off and land state machine, auto-disarm, touchdown detection, geofence, reference-loss hold</td></tr>
+            <tr><td>Simulation</td><td>Gazebo Harmonic at 1 kHz physics, per-rotor motor model with lag and drag, noisy IMU, wind gusts</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="links">
+      <div class="eyebrow">05 · Links</div>
+      <p><a href="https://github.com/YOUR-USERNAME/2004_drone_control">Code on GitHub →</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script>
+    Arch.mount(document.getElementById('q-arch'), {
+      id: 'q', width: 1000, height: 470, label: 'Quadcopter flight stack',
+      columns: [
+        { x: 40, w: 200, label: 'Operator' }, { x: 300, w: 220, label: 'Modes & planning' },
+        { x: 580, w: 190, label: 'Control' }, { x: 830, w: 150, label: 'Simulation' }
+      ],
+      modes: [
+        { id: 'manual', label: 'Manual flight', desc: 'You fly. Stick deflection commands velocity, and centred sticks hold position. The mode manager keeps arming, geofence and landing logic active the whole time.' },
+        { id: 'auto', label: 'Autonomous mission', desc: 'The drone flies a mission. The planner streams a smooth C2 reference with a quintic blend from wherever the drone is. Moving a stick hands control straight back to the pilot.' }
+      ],
+      nodes: [
+        { id: 'pilot', x: 40, y: 64, w: 200, h: 120, title: 'Pilot input', sub: 'sticks · keys · gamepad',
+          lines: ['Mode-2 sticks → velocity', 'Centred = position hold', 'Hold-to-kill'],
+          info: { body: 'On-screen thumbsticks, the keyboard, or a real gamepad through the browser.', facts: ['Mode-2 sticks commanding velocity', 'Position hold when centred', 'Overrides autonomy at any time'] } },
+        { id: 'gs', x: 40, y: 220, w: 200, h: 110, title: 'Ground station', sub: 'browser · :8080',
+          lines: ['HUD + artificial horizon', 'Rotor bars, telemetry', 'Take-off · land · RUN'],
+          info: { body: 'Web ground station over the live Gazebo view, with telemetry and mission buttons on top.', facts: ['HUD and artificial horizon', 'Rotor bars', 'Take-off, land and mission selection'] } },
+        { id: 'mission', x: 300, y: 64, w: 220, h: 120, title: 'Mission planner', sub: 'C2 trajectories', modes: ['auto'],
+          lines: ['Figure-8 · racing gates', 'Cinematic orbit · survey', 'Quintic blend from current state'],
+          info: { body: 'Generates smooth missions and starts them from wherever the drone is.', facts: ['Figure-8', 'Racing gates', 'Cinematic orbit', 'Lawn-mower survey'] } },
+        { id: 'mode', x: 300, y: 220, w: 220, h: 140, title: 'Flight mode manager', sub: 'state machine', kind: 'core',
+          lines: ['Arm → take-off → fly → land', 'Geofence · reference leash', 'Reference loss → HOLD', 'Stick input → MANUAL'],
+          info: { body: 'Safety logic that decides which command reaches the controller.', facts: ['Arm, take-off and land state machine', 'Auto-disarm and touchdown detection', 'Geofence and reference leash', 'Reference loss switches to HOLD', 'Stick input switches to MANUAL'] } },
+        { id: 'ctrl', x: 580, y: 64, w: 190, h: 140, title: 'SE(3) controller', sub: 'Lee et al. 2010', kind: 'core',
+          lines: ['Accel feed-forward', 'Tilt / accel limits', 'Anti-windup integrator'],
+          info: { body: 'Geometric tracking controller on SE(3) that follows the position and attitude reference.', facts: ['Acceleration feed-forward', 'Tilt and acceleration limits', 'Anti-windup integrator'] } },
+        { id: 'mixer', x: 580, y: 240, w: 190, h: 100, title: 'Motor mixer', sub: 'priority-aware',
+          lines: ['Thrust + moments', '→ 4 rotor commands'],
+          info: { body: 'Turns the controller output into four rotor commands, prioritising attitude when the motors saturate.' } },
+        { id: 'gz', x: 830, y: 64, w: 150, h: 180, title: 'Gazebo', sub: 'Harmonic · 1 kHz',
+          lines: ['Per-rotor motor model', '(lag, rotor drag)', 'Noisy IMU', 'Wind gusts'],
+          info: { body: 'X-frame quadcopter, 1.5 kg with 9-inch props, in an airfield world.', facts: ['1 kHz physics', 'MulticopterMotorModel per rotor', 'Noisy IMU and wind gusts'] } },
+        { id: 'render', x: 830, y: 300, w: 150, h: 90, title: 'Blender', sub: 'Cycles', kind: 'eval',
+          lines: ['Photoreal video', 'from flight logs'],
+          info: { body: 'Every flight is logged and can be rendered into a photoreal video offline.' } }
+      ],
+      edges: [
+        { from: 'pilot', to: 'mode', label: 'stick commands', lt: 0.4 },
+        { from: 'gs', to: 'mode', label: 'buttons', lt: 0.35 },
+        { from: 'mission', to: 'mode', fs: 'b', ts: 't', label: 'reference', lx: 34, ly: 8 },
+        { from: 'mode', to: 'ctrl', label: 'setpoint', lt: 0.55 },
+        { from: 'ctrl', to: 'mixer', fs: 'b', ts: 't', label: 'thrust, moments', lx: 52, ly: 8 },
+        { from: 'mixer', to: 'gz', label: 'rotor speeds', lt: 0.55 },
+        { from: 'gz', to: 'ctrl', d: 'M828,100 L772,100', label: 'state', lt: 0.5, always: true },
+        { from: 'gz', to: 'gs', d: 'M830,215 C800,215 800,432 760,432 L140,432 L140,332', label: 'telemetry + live view', lt: 0.55, always: true },
+        { from: 'gz', to: 'render', fs: 'b', ts: 't', dashed: true, label: 'flight log', lx: 34, ly: 6 }
+      ]
+    });
+  </script>
+</body>
+</html>

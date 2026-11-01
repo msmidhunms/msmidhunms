@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Training Platform | Midhun</title>
+  <meta name="description" content="Research ML platform: simulation-generated datasets, containerised GPU training, hyperparameter search, a model registry and deployment to a robot.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← AI/ML</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#layers">Layers</a></li>
+        <li><a href="#compute">Compute</a></li>
+        <li><a href="#practice">Practice</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">AI &amp; ML · System design</div>
+      <h1>ML training <em>platform</em></h1>
+      <p class="lead">A GPU training platform for generative trajectory models: data from simulation, containerised training, automated hyperparameter search, and deployment to a robot.</p>
+    </header>
+
+    <section class="block" id="architecture">
+      <div class="eyebrow">01 · Architecture</div>
+      <h2>From simulation to <em>deployment</em></h2>
+      <p>Switch between the data and training view and the deployment view. Hover a block to trace its links, click it for details.</p>
+      <div class="arch" id="ml-arch">
+        <div class="arch-tabs" role="tablist" aria-label="View"></div>
+        <div class="arch-body">
+          <div class="arch-stage"></div>
+          <aside class="arch-info" aria-live="polite"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="layers">
+      <div class="eyebrow">02 · Layers</div>
+      <h2>The layered <em>stack</em></h2>
+      <p>The platform is built in layers. Each layer runs on the one below it, so the same container images can move between nodes without changes.</p>
+      <p class="note">This is the stack I used for the research work in my PhD thesis: simulation data generation, model training and hyperparameter search.</p>
+      <div class="layers">
+        <div class="layer top"><span class="k">Management</span><strong>Portainer · GitLab · Container registry · Optuna · IPMI</strong><small>Operate, version, search and monitor the cluster.</small></div>
+        <div class="layer app"><span class="k">Containers</span><strong>Container I: TensorFlow · Keras · CUDA</strong><strong>Container II: PyTorch Lightning · PyTorch Kinematics · CUDA</strong><small>Isolated training environments on Ubuntu base images.</small></div>
+        <div class="layer rt"><span class="k">Runtime</span><strong>Docker Engine</strong><small>Runs and isolates containers on each compute node.</small></div>
+        <div class="layer os"><span class="k">Operating system</span><strong>CentOS 7.3</strong><small>Installed on the master, storage and compute nodes.</small></div>
+        <div class="layer hw"><span class="k">Hardware</span><strong>Master · storage · compute nodes</strong><small>Xeon CPUs, GTX 1080 Ti GPUs, 256 GB RAM per compute node, 2 TB disks.</small></div>
+      </div>
+      <figure class="arch-fig">
+        <img src="media/hpc_architecture.png" alt="Software architecture of the HPC facility: nodes, operating system, Docker engine and containers" loading="lazy">
+        <figcaption>Software architecture of the HPC facility, from the thesis (Fig. 7.13). Hardware specifications are shown per node.</figcaption>
+      </figure>
+    </section>
+
+    <section class="block" id="compute">
+      <div class="eyebrow">03 · Compute</div>
+      <h2>Cluster <em>capacity</em></h2>
+      <p>Compute comes from GPU and CPU nodes on a private network, with a master node for management and a storage node for datasets. </p>
+      <figure class="arch-fig cluster-photo">
+        <img src="media/hpc_cluster.png" alt="HPC rack with compute, master and storage nodes" loading="lazy">
+        <figcaption>The HPC rack in the lab: compute, master and storage nodes, with the network stack at the top.</figcaption>
+      </figure>
+      <div class="hw">
+        <div><span class="k">CPUs</span><strong>14 × Intel Xeon E5-2650</strong></div>
+        <div><span class="k">GPUs</span><strong>20 × NVIDIA GeForce GTX 1080 Ti</strong></div>
+        <div><span class="k">GPUs</span><strong>4 × NVIDIA Tesla P100 (Pascal)</strong></div>
+        <div><span class="k">Software</span><strong>CentOS · Docker · CUDA · TensorFlow · PyTorch</strong></div>
+        <div><span class="k">Operations</span><strong>GitLab · container registry · Portainer · IPMI</strong></div>
+        <div><span class="k">Nodes</span><strong>Compute · master · storage, on a private network</strong></div>
+      </div>
+    </section>
+
+    <section class="block" id="practice">
+      <div class="eyebrow">04 · Practice</div>
+      <h2>How the platform is <em>run</em></h2>
+      <div class="features">
+        <div class="feature"><span class="k">Isolation</span><h3>One container per stack</h3><p>TensorFlow and PyTorch run in separate Docker containers with pinned CUDA, so each project keeps its own dependencies.</p></div>
+        <div class="feature"><span class="k">Search</span><h3>Automated tuning</h3><p>Optuna runs hyperparameter trials across the GPU nodes and keeps the best configuration for each model.</p></div>
+        <div class="feature"><span class="k">Versions</span><h3>Code and images</h3><p>GitLab manages code and versions. Built images go to a container registry before they reach the cluster.</p></div>
+        <div class="feature"><span class="k">Ops</span><h3>Managed nodes</h3><p>Portainer manages the Docker containers, and nodes run CentOS 7.3 with an IPMI management interface.</p></div>
+      </div>
+          <p class="note">The platform and its use in the research are described in <a href="../../assets/thesis/chapter-7.pdf" target="_blank" rel="noopener">thesis chapter 7 (PDF)</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+
+  <script src="../../assets/arch.js"></script>
+  <script>
+    Arch.mount(document.getElementById('ml-arch'), {
+      id: 'ml', width: 1000, height: 420, label: 'ML training platform architecture',
+      columns: [
+        { x: 40, w: 200, label: 'Data' }, { x: 300, w: 220, label: 'Training' },
+        { x: 580, w: 190, label: 'Platform' }, { x: 830, w: 150, label: 'Deploy' }
+      ],
+      modes: [
+        { id: 'train', label: 'Data and training', desc: 'Simulation generates trajectory datasets into shared storage. Containerised GPU jobs train the generative models, and Optuna runs the hyperparameter search. Trained models go to the registry.' },
+        { id: 'deploy', label: 'Deployment', desc: 'A tested model is released from the registry to the robot controller. Execution logs come back into evaluation, which feeds new data into the next round of training.' }
+      ],
+      nodes: [
+        { id: 'sim', x: 40, y: 64, w: 200, h: 90, title: 'ROS simulation', sub: 'Gazebo + MoveIt', modes: ['train'],
+          lines: ['Scenario generation', 'Trajectory logging'],
+          info: { body: 'Generates diverse scenarios and trajectories with ROS motion planning, producing the training data.' } },
+        { id: 'store', x: 40, y: 190, w: 200, h: 90, title: 'Dataset storage', sub: 'network storage', modes: ['train'],
+          info: { body: 'High-throughput storage on the isolated network, so large datasets reach the GPU nodes with low latency.' } },
+        { id: 'git', x: 40, y: 296, w: 200, h: 90, title: 'GitLab', sub: 'code & versions',
+          info: { body: 'Source control and CI. Each change builds a container image.' } },
+        { id: 'tf', x: 300, y: 64, w: 220, h: 100, title: 'Container I', sub: 'TensorFlow · Keras', modes: ['train'],
+          lines: ['Disentanglement models'],
+          info: { body: 'Training container for TensorFlow and Keras models, including the β-VAE disentanglement work. Uses CUDA on the GPU nodes.' } },
+        { id: 'pt', x: 300, y: 190, w: 220, h: 100, title: 'Container II', sub: 'PyTorch Lightning', modes: ['train'],
+          lines: ['PyTorch Kinematics on CUDA'],
+          info: { body: 'Training container for CVAE and Transformer-VAE models, with robot kinematics computed on CUDA cores.' } },
+        { id: 'opt', x: 300, y: 316, w: 220, h: 80, title: 'Optuna', sub: 'hyperparameter search', modes: ['train'],
+          info: { body: 'Runs hyperparameter trials across the GPU nodes and keeps the configuration with the best path accuracy.' } },
+        { id: 'reg', x: 580, y: 64, w: 190, h: 90, title: 'Container registry', sub: 'versioned images',
+          info: { body: 'Stores built images with versions, so any trained model can be reproduced later.' } },
+        { id: 'gpu', x: 580, y: 190, w: 190, h: 100, title: 'GPU compute nodes', sub: 'CUDA · Docker', modes: ['train'],
+          lines: ['20 × GTX 1080 Ti', '4 × Pascal 100'],
+          info: { body: 'The compute tier. Each node runs training containers with Docker and CUDA.' } },
+        { id: 'serve', x: 830, y: 64, w: 150, h: 90, title: 'Deployment', sub: 'to controller', modes: ['deploy'],
+          info: { body: 'Releases a tested model to the robot controller.' } },
+        { id: 'robot', x: 830, y: 190, w: 150, h: 100, title: 'Robot', sub: 'SCARA arm', modes: ['deploy'],
+          info: { body: 'Runs the model for trajectory correction and reports execution logs.' } },
+        { id: 'eval', x: 830, y: 316, w: 150, h: 80, title: 'Evaluation', sub: 'path accuracy',
+          info: { body: 'Measures path accuracy on held-out trajectories. Failures feed new data into the next training round.' } }
+      ],
+      edges: [
+        { from: 'sim', to: 'store', modes: ['train'], label: 'datasets', lt: 0.5 },
+        { from: 'store', to: 'tf', modes: ['train'], label: 'train', lt: 0.5, lx: 6 },
+        { from: 'store', to: 'pt', modes: ['train'], label: 'train', lt: 0.5, lx: 6 },
+        { from: 'opt', to: 'tf', modes: ['train'], label: 'trials', lt: 0.5, lx: -20 },
+        { from: 'tf', to: 'reg', label: 'model image', lt: 0.5 },
+        { from: 'pt', to: 'reg', label: 'model image', lt: 0.5 },
+        { from: 'git', to: 'reg', d: 'M240,341 C420,341 420,40 580,109', label: 'CI build', lt: 0.5, lx: 20 },
+        { from: 'gpu', to: 'tf', modes: ['train'], d: 'M580,240 C520,240 520,130 520,114', label: 'run', lt: 0.5, lx: 20, ly: -6 },
+        { from: 'reg', to: 'serve', modes: ['deploy'], label: 'release', lt: 0.5 },
+        { from: 'serve', to: 'robot', modes: ['deploy'], label: 'model', lt: 0.5 },
+        { from: 'robot', to: 'eval', label: 'exec logs', lt: 0.5 },
+        { from: 'eval', to: 'store', dashed: true, d: 'M830,356 C600,460 140,460 140,280', label: 'new data', lt: 0.5, ly: 14 }
+      ]
+    });
+
+  </script>
+  <style>
+    .hw { display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:.7rem; margin-top:1rem; }
+    .hw div { border:1px solid var(--border); border-radius:10px; padding:.7rem .9rem; background:var(--surface); }
+    .hw .k { display:block; font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .bar-row { display: grid; grid-template-columns: minmax(180px, 1fr) 2fr auto; gap: .8rem; align-items: center; font-size: .92rem; }
+    .bar { height: 14px; background: #ece9f6; border-radius: 7px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: linear-gradient(90deg, #8b7be0, #5a48c8); border-radius: 7px; }
+    .bar-val { white-space: nowrap; color: #6b6880; }
+    @media (max-width: 600px) { .bar-row { grid-template-columns: 1fr; } }
+    .layers { display: grid; gap: .5rem; margin: 1rem 0 1.4rem; }
+    .layer { border: 1px solid #d6d0ec; border-radius: 10px; padding: .7rem 1rem; display: grid; gap: .15rem; }
+    .layer .k { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: #6b6880; }
+    .layer small { color: #6b6880; }
+    .layer.top { background: #f1eefb; } .layer.app { background: #e8f1f6; } .layer.rt { background: #eef6f1; }
+    .layer.os { background: #f4f4f6; } .layer.hw { background: #fbf7ee; }
+    .arch-fig { margin: 1rem 0 0; }
+    .arch-fig img { width: 100%; height: auto; border: 1px solid #e3dff0; border-radius: 10px; background: #fff; }
+    .cluster-photo img { max-width: 420px; margin: 0 auto; display: block; }
+    .arch-fig figcaption { font-size: .9rem; color: #6b6880; margin-top: .5rem; }
+  </style>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlphaNIST in ROS 2 | Midhun</title>
+  <meta name="description" content="A reimplementation of the AlphaNIST robotics paper in ROS 2 and Gazebo: one PPO policy assembling parts with a Franka Panda.">
+  <script src="../../assets/theme.js"></script>
+  <link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+  <nav class="top">
+    <div class="inner">
+      <a class="brand" href="../../">Midhun</a>
+      <ul>
+        <li><a href="../">← Robotics</a></li>
+        <li><a href="#policy">Policy</a></li>
+        <li><a href="#scope">Scope</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Robotics · Learning for manipulation</div>
+      <h1>AlphaNIST in <em>ROS 2</em></h1>
+      <p class="lead">A reimplementation of <em>AlphaNIST: Emergent Assembly Skills from Binary Task Rewards</em> (Zhang et al., arXiv:2610.13354). One PPO policy learns to assemble NIST Task Board #1 parts with a Franka Panda, using only a binary "fully assembled" reward.</p>
+      <div class="meta">
+        <span class="tag">ROS 2 Jazzy</span><span class="tag">Gazebo Harmonic</span><span class="tag">MuJoCo</span><span class="tag">PyTorch</span><span class="tag">PPO</span><span class="tag">Franka Panda</span>
+      </div>
+    </header>
+
+    <section class="block" id="policy">
+      <div class="eyebrow">01 · Trained policy</div>
+      <h2>The policy <em>in action</em></h2>
+      <p>Each episode shows the task, how it started, the assembly error, and ends on a green ASSEMBLED or red NOT ASSEMBLED banner.</p>
+      <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/policy.mp4"></video><figcaption>Trained policy, all tasks and start conditions.</figcaption></figure>
+      <div class="grid2">
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/policy_partial_starts.mp4"></video><figcaption>Episodes from partially assembled starts.</figcaption></figure>
+        <figure class="media-block"><video controls muted playsinline preload="metadata" src="media/policy_peg8_partial_vs_table.mp4"></video><figcaption>Ø8 peg: partial start compared with a start on the table.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="block" id="method">
+      <div class="eyebrow">02 · Method</div>
+      <h2>What the <em>paper</em> asks for</h2>
+      <ul class="clean">
+        <li>A binary reward: the policy only gets credit for a fully assembled part.</li>
+        <li>A reset bank of start states, so the policy practises from partial assemblies as well as from scratch.</li>
+        <li>Success-guided beta sampling to choose which start states to train on.</li>
+      </ul>
+    </section>
+
+    <section class="block" id="scope">
+      <div class="eyebrow">03 · Scope</div>
+      <h2>Four-task <em>subset</em></h2>
+      <p>The reimplementation covers four tasks: Ø8 and Ø12 pegs, a medium gear, and an M16 nut on a bolt. The mapping from paper to code, and every deviation from the paper, is documented in the repository.</p>
+      <p class="note">The robot is Franka's official model (<code>franka_description</code> 2.9.0). Training runs in a scaled-down MuJoCo setup; ROS 2 and Gazebo run inside Docker.</p>
+    </section>
+
+    <section class="block" id="links">
+      <div class="eyebrow">04 · Links</div>
+      <p><a href="https://github.com/YOUR-USERNAME/2002_ros2_paper2">Code on GitHub →</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <nav class="foot"><a href="../../">Home</a> · <a href="../../robotics/">Robotics</a> · <a href="../../aiml/">AI &amp; ML</a> · <a href="https://www.linkedin.com/in/drmidhunms/" target="_blank" rel="noopener">LinkedIn</a> · <a href="https://github.com/msmidhunms" target="_blank" rel="noopener">GitHub</a></nav>
+    <p>© 2026 Dr. Midhun M S</p>
+  </footer>
+</body>
+</html>

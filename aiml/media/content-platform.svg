@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="sans-serif">
+  <rect width="640" height="360" fill="#f4f1ff"/>
+  <g fill="#fff" stroke="#5a48c8" stroke-width="2">
+    <rect x="40" y="150" width="130" height="60" rx="10"/>
+    <rect x="240" y="60" width="150" height="60" rx="10"/>
+    <rect x="240" y="150" width="150" height="60" rx="10"/>
+    <rect x="240" y="240" width="150" height="60" rx="10"/>
+    <rect x="460" y="150" width="140" height="60" rx="10"/>
+  </g>
+  <g stroke="#5a48c8" stroke-width="2" fill="none">
+    <path d="M170 180 L240 90"/><path d="M170 180 L240 180"/><path d="M170 180 L240 270"/>
+    <path d="M390 90 L460 170"/><path d="M390 180 L460 180"/><path d="M390 270 L460 190"/>
+  </g>
+  <g fill="#2a2450" font-size="20" text-anchor="middle">
+    <text x="105" y="186">Brief</text>
+    <text x="315" y="96">Research</text>
+    <text x="315" y="186">Draft (LLM)</text>
+    <text x="315" y="276">Illustrate</text>
+    <text x="530" y="186">Publish</text>
+  </g>
+  <text x="320" y="335" fill="#5a48c8" font-size="18" text-anchor="middle">LLM agents with tools and guardrails</text>
+</svg>
