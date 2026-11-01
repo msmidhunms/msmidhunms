@@ -1,43 +1,43 @@
-- 👋 Hi, I'm Dr. Midhun M S
+# Hi, I'm Midhun 👋
 
-- Senior Data Scientist with a PhD in Artificial Intelligence and Robotics, based in Kerala, India. I build LLM applications and the evaluation tooling around them: RAG systems, agents, small fast classifiers, and the APIs that serve them. My research background is in robotics, which is where my habit of measuring everything comes from.
+**Senior Data Scientist · PhD in generative AI for robot trajectory planning**
 
+I spent nine years researching generative models that teach robots how to move, then moved into industry to lead teams that ship multi-agent GenAI products. Today I work across both: production AI systems and robots that learn.
 
-- 👀 **Open to senior data science, applied AI / LLM engineering and robotics roles.** The quickest way to reach me is [LinkedIn](https://www.linkedin.com/in/dr-midhun-m-s-45aa7327/) or [email](mailto:midhunms.doe@gmail.com).
+🌐 **Portfolio:** [msmidhunms.github.io](https://msmidhunms.github.io) · 💼 [LinkedIn](https://www.linkedin.com/in/drmidhunms/)
 
-## Featured projects
+---
 
-| Project | What it is | Built with |
-|---|---|---|
-| [system1-prompt-lab](https://github.com/msmidhunms/system1-prompt-lab) | Workbench for small, fast "System 1" classifiers that decide in one forward pass. Golden datasets for eight tasks, per-label evaluation, side-by-side model comparison, and an LLM-driven prompt optimizer that keeps only gains larger than noise. Runs on a laptop CPU. | FastAPI, SQLite, React, DeBERTa NLI, ModernBERT, GLiClass |
-| [DimReduceGrid](https://github.com/msmidhunms/DimReduceGrid) | Maps image feature embeddings onto a 2D plane and arranges the images into an optimized grid, to see how a model groups a dataset. | Python, t-SNE, PCA, UMAP, Isomap |
-| [Langgraph-Research-Agent](https://github.com/msmidhunms/Langgraph-Research-Agent) | Research agent that generates search terms, searches the web, reflects on what it found, and loops until it can write an answer with citations. | LangGraph, Gemini, DuckDuckGo |
-| [ResumeScore](https://github.com/msmidhunms/ResumeScore) | Extracts the requirements from a job description, scores and ranks resumes against them, and exports the results to CSV or Excel. | FastAPI, any OpenAI-compatible LLM |
-| [CareerBoostGPT](https://github.com/msmidhunms/CareerBoostGPT) | Interview coach for coding, behavioural, and system design rounds, with practice questions and feedback on answers. | Python, OpenAI API |
-| [Blog_Project_FastAPI](https://github.com/msmidhunms/Blog_Project_FastAPI) | Blog platform backend with user registration, JWT authentication, and post CRUD. [Live demo](https://blog-project-fast-api.vercel.app). | FastAPI, SQLAlchemy, Pydantic |
+### 🤖 Robotics
 
-## What I'm working on
+| Project | What it is |
+|---|---|
+| [**hydra-balance**](https://github.com/msmidhunms/hydra-balance) | Self-balancing ball on a platform driven by four hydraulic cylinders. ROS 2, MuJoCo, PID/LQR, Kalman filters and three ways of estimating the ball's position. [Project page →](https://msmidhunms.github.io/robotics/self-balancing-ball/) |
+| **Quadcopter control** | A quadcopter flight stack in ROS 2 with joystick and autonomous control. [Project page →](https://msmidhunms.github.io/robotics/quadcopter/) |
+| **Panda drawing robot** *(in progress)* | A Franka Panda that draws sketches with a pen, heading towards a generative "draw from a prompt" model. [Project page →](https://msmidhunms.github.io/robotics/panda-drawing/) |
+| **Robotics lab ecosystem** | A SCARA arm on a custom embedded controller, networked to a GPU cluster: demonstrations go in, trained models come back to drive the arm. [Project page →](https://msmidhunms.github.io/robotics/lab-ecosystem/) |
 
-- Evaluating and optimizing prompts for small classifiers, in [system1-prompt-lab](https://github.com/msmidhunms/system1-prompt-lab).
-- Retrieval-augmented generation and how to evaluate it properly.
+### 🧠 Research: generative models for robots
 
-## Tech
+Concept pages from my PhD, each with an interactive demo:
 
-- **Languages:** Python, TypeScript, SQL
-- **LLM and ML:** LangGraph, LangChain, Hugging Face Transformers, scikit-learn, Ollama, OpenAI-compatible and Gemini APIs
-- **Backend:** FastAPI, Django, SQLAlchemy, SQLite, PostgreSQL
-- **Frontend:** React
-- **Research background:** PhD in Artificial Intelligence and Robotics; reinforcement learning, embedded systems (VHDL)
+- [**Planning and control in one network**](https://msmidhunms.github.io/robotics/planning-and-control/): CNN-VAE and CNN-LSTM VAE, inspired by how the brain plans and moves
+- [**Robot motion as a language**](https://msmidhunms.github.io/robotics/motion-as-language/): Transformer-VAEs that treat each robot pose as a word
+- [**Learning a task as a game**](https://msmidhunms.github.io/robotics/learning-as-a-game/): GANs that learn a task from demonstrations alone
+- [**Seeing tasks the way people do**](https://msmidhunms.github.io/robotics/disentangled-tasks/): β-VAE disentanglement for controllable robot skills
+- [**Searching without gradients**](https://msmidhunms.github.io/aiml/searching-without-gradients/): hyperparameter and latent-space search
 
+📄 PhD thesis (CUSAT, 2025): [*Robot trajectory amenagement under structured static environment using data driven generative latent variable models*](https://shodhganga.inflibnet.ac.in/handle/10603/669301) · 12 publications in journals, conferences and book chapters
 
+### 🚀 AI in production
 
+I lead small AI teams building LLM-powered products: multi-agent content workflows, retrieval over client data, guardrails and evaluation. The code is private; anonymised case studies are on the [portfolio](https://msmidhunms.github.io/aiml/).
 
-## Contact
+---
 
-[LinkedIn](https://www.linkedin.com/in/dr-midhun-m-s-45aa7327/) · [Email](mailto:midhunms.doe@gmail.com)
+### 🛠️ Tools I work with
 
-
-<!---
-msmidhunms/msmidhunms is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
-You can click the Preview link to take a look at your changes.
---->
+**Robotics:** ROS 2 · Gazebo · MuJoCo · MoveIt · control (PID, LQR) · state estimation · embedded (ARM Cortex-M)
+**Machine learning:** PyTorch · TensorFlow · VAEs · GANs · Transformers · hyperparameter search · GPU / HPC training
+**Generative AI:** LLMs · multi-agent orchestration · RAG · LLM evaluation · LangChain
+**Engineering:** Python · Docker · CI/CD · Linux
